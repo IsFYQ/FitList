@@ -1,0 +1,22 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+**/build/
+/captures
+.externalNativeBuild
+.cxx
+*.apk
+*.ap_
+*.aab
+.kotlin/
+.workbuddy/
+
+# Room schema export
+app/schemas/
+
+# Secrets
+local.properties
+secrets.properties

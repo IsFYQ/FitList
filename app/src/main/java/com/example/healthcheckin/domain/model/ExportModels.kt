@@ -1,0 +1,29 @@
+package com.example.healthcheckin.domain.model
+
+import java.io.File
+
+enum class ExportTable(val fileName: String, val progressLabel: String) {
+    PROFILE("profile.csv", "档案"),
+    GOALS("goals.csv", "目标"),
+    DAILY_BUDGETS("daily_budgets.csv", "每日预算"),
+    FOODS("foods.csv", "食物库"),
+    MEAL_ENTRIES("meal_entries.csv", "饮食记录"),
+    WEIGHT_RECORDS("weight_records.csv", "体重记录"),
+}
+
+data class ExportProgress(
+    val table: ExportTable? = null,
+    val message: String = "",
+)
+
+data class ExportResult(
+    val success: Boolean,
+    val file: File? = null,
+    val totalRows: Int = 0,
+    val fileSizeKb: Int = 0,
+    val elapsedMs: Long = 0,
+    val isEmptyData: Boolean = false,
+    val errorCode: String? = null,
+    val errorMessage: String? = null,
+    val cancelled: Boolean = false,
+)

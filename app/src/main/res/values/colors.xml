@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#4CAF50</color>
+    <color name="calorie_normal">#4CAF50</color>
+    <color name="calorie_warn">#FF9800</color>
+    <color name="calorie_over">#F44336</color>
+</resources>

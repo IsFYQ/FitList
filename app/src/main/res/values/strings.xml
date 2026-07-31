@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">健康打卡</string>
+
+    <!-- Splash -->
+    <string name="splash_version">v%1$s</string>
+
+    <!-- Auth -->
+    <string name="auth_login_title">登录</string>
+    <string name="auth_register_title">注册</string>
+    <string name="auth_email_hint">邮箱</string>
+    <string name="auth_password_hint">密码</string>
+    <string name="auth_confirm_password_hint">确认密码</string>
+    <string name="auth_password_rules">8-64个字符，需同时包含字母和数字</string>
+    <string name="auth_login_button">登录</string>
+    <string name="auth_login_loading">登录中…</string>
+    <string name="auth_register_button">注册</string>
+    <string name="auth_register_loading">注册中…</string>
+    <string name="auth_no_account">没有账号？注册</string>
+    <string name="auth_has_account">已有账号？登录</string>
+    <string name="auth_forgot_password">忘记密码？</string>
+    <string name="auth_error_email_invalid">请输入正确的邮箱地址</string>
+    <string name="auth_error_password_invalid">密码需8-64个字符，且同时包含字母和数字</string>
+    <string name="auth_error_password_mismatch">两次输入的密码不一致</string>
+    <string name="auth_error_credentials">邮箱或密码不正确</string>
+    <string name="auth_error_email_exists">该邮箱已注册，可直接登录或重置密码</string>
+    <string name="auth_error_network">网络似乎没有连接，请检查后重试</string>
+    <string name="auth_error_timeout">网络响应超时，请重试</string>
+    <string name="auth_error_server">服务暂时不可用，请稍后重试</string>
+    <string name="auth_error_login_locked">尝试过于频繁，请%1$d秒后再试</string>
+    <string name="auth_error_session_expired">登录已过期，请重新登录</string>
+    <string name="auth_error_register_success_login">注册成功，请登录</string>
+    <string name="auth_verify_email_sent">验证邮件已发送到%1$s，验证后可使用密码重置功能</string>
+    <string name="auth_offline_mode">离线模式</string>
+    <string name="auth_keystore_unavailable">设备安全存储不可用，本次登录状态不会被保留</string>
+
+    <!-- Forgot password -->
+    <string name="auth_forgot_title">忘记密码</string>
+    <string name="auth_forgot_description">输入注册邮箱，我们将发送重置链接</string>
+    <string name="auth_forgot_send">发送重置邮件</string>
+    <string name="auth_forgot_success">重置链接已发送到%1$s，请在60分钟内完成设置</string>
+    <string name="auth_forgot_back_login">返回登录</string>
+    <string name="auth_forgot_send_failed">发送失败，请检查网络后重试</string>
+    <string name="auth_forgot_resend">重新发送（%1$ds）</string>
+    <string name="auth_reset_title">设置新密码</string>
+    <string name="auth_reset_description">请输入新密码，设置完成后需重新登录。</string>
+    <string name="auth_reset_confirm">确认修改</string>
+    <string name="auth_reset_link_invalid">重置链接已失效，请重新发起</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">今日</string>
+    <string name="dashboard_back_to_today">返回今天</string>
+    <string name="dashboard_remaining_calories">剩余%1$s大卡</string>
+    <string name="dashboard_over_calories">已超出%1$s</string>
+    <string name="dashboard_budget_consumed">预算%1$s · 已摄入%2$s大卡</string>
+    <string name="dashboard_budget_inferred">预算为推算值</string>
+    <string name="dashboard_warn_near_limit">快到今日上限了</string>
+    <string name="dashboard_empty_meals">记录你的第一餐吧</string>
+    <string name="dashboard_add_meal">添加饮食</string>
+    <string name="dashboard_time_inaccurate">设备时间可能不准确，可能影响记录日期</string>
+    <string name="dashboard_no_goal_hint">先设置目标，才能计算每日预算</string>
+    <string name="dashboard_go_setup_goal">去设置</string>
+    <string name="dashboard_budget_abnormal">预算数据异常，建议重新设置目标</string>
+    <string name="dashboard_weight_empty">站上体重秤，开始追踪变化</string>
+    <string name="dashboard_goal_reached">已达成目标</string>
+    <string name="dashboard_distance_to_goal">距目标还有%1$skg</string>
+    <string name="dashboard_meal_group_header">%1$s · %2$s大卡</string>
+    <string name="dashboard_delete_meal">删除</string>
+    <string name="dashboard_macro_over">超%1$sg</string>
+    <string name="dashboard_load_error">数据读取失败</string>
+    <string name="dashboard_date_limit_toast">只能查看最近365天的记录</string>
+    <string name="dashboard_sync_offline_toast">数据已保存在本机，联网后会自动备份</string>
+    <string name="dashboard_sync_pending_toast">%1$d条数据待备份</string>
+    <string name="dashboard_health_disclaimer">本提示不构成医疗建议</string>
+    <string name="dashboard_health_backfill">去补录</string>
+    <string name="dashboard_warning_low_intake">最近三天的记录摄入偏低，身体需要足够能量。如果记录不完整，可以补录一下。</string>
+    <string name="dashboard_warning_high_intake">最近三天摄入都超出预算50%以上，可以看看是哪些食物贡献较多。</string>
+    <string name="dashboard_warning_record_gap">有两天没有记录了，现在补上还来得及。</string>
+    <string name="dashboard_meal_deleted_name">已删除「%1$s」</string>
+    <string name="dashboard_sync_failed_toast">%1$d条数据备份失败，请前往设置查看</string>
+    <string name="dashboard_undo_delete">撤销</string>
+    <string name="dashboard_undo_failed">撤销失败，请手动重新记录</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title">设定你的目标</string>
+    <string name="onboarding_edit_title">修改我的目标</string>
+    <string name="onboarding_back_blocked">完成设置后即可开始使用</string>
+    <string name="onboarding_next">下一步</string>
+    <string name="onboarding_previous">上一步</string>
+    <string name="onboarding_start_button">开始使用</string>
+    <string name="onboarding_step1_title">基本信息</string>
+    <string name="onboarding_step2_title">身体数据</string>
+    <string name="onboarding_step3_title">体重目标</string>
+    <string name="onboarding_step4_title">活动水平</string>
+    <string name="onboarding_step5_title">你的每日计划</string>
+    <string name="onboarding_sex_male">男</string>
+    <string name="onboarding_sex_female">女</string>
+    <string name="onboarding_birth_label">出生年月</string>
+    <string name="onboarding_birth_year">年</string>
+    <string name="onboarding_birth_month">月</string>
+    <string name="onboarding_height_label">身高</string>
+    <string name="onboarding_height_placeholder">170.0</string>
+    <string name="onboarding_current_weight_label">当前体重</string>
+    <string name="onboarding_target_weight_label">目标体重</string>
+    <string name="onboarding_weight_placeholder">65.0</string>
+    <string name="onboarding_unit_cm">cm</string>
+    <string name="onboarding_unit_kg">kg</string>
+    <string name="onboarding_target_weeks_label">期望达成时间：%1$d周</string>
+    <string name="onboarding_maintain_weeks_disabled">保持当前体重</string>
+    <string name="onboarding_budget_unit">大卡/天</string>
+    <string name="onboarding_macro_protein">蛋白质</string>
+    <string name="onboarding_macro_carb">碳水</string>
+    <string name="onboarding_macro_fat">脂肪</string>
+    <string name="onboarding_calculation_expand">如何计算的？</string>
+    <string name="onboarding_calculation_collapse">收起计算详情</string>
+    <string name="onboarding_calc_bmr">基础代谢 BMR：%1$d大卡/天</string>
+    <string name="onboarding_calc_tdee">每日总消耗 TDEE：%1$d大卡/天</string>
+    <string name="onboarding_calc_delta">每日热量差值 %1$s → 预算 %2$d大卡/天</string>
+    <string name="onboarding_bmr_clamped_warning">你的身体数据较为特殊，计算结果已按最低安全值处理，建议咨询专业人士</string>
+    <string name="onboarding_budget_clamped_warning">为保证健康，每日热量差值已限制为%1$d大卡。按此速度预计需要%2$d周达成目标（你的期望为%3$d周）。</string>
+    <string name="onboarding_est_weeks_long_suffix">建议调整目标体重或延长时间</string>
+    <string name="onboarding_macro_adjusted_warning">为满足营养下限，预算已上调至%1$s大卡</string>
+    <string name="onboarding_weight_diff_title">确认目标体重</string>
+    <string name="onboarding_weight_diff_message">目标与当前体重相差%1$skg，请确认输入无误</string>
+    <string name="onboarding_record_weight_title">记录体重</string>
+    <string name="onboarding_record_weight_prompt">要把%1$skg记录到体重曲线吗？</string>
+    <string name="onboarding_record_weight_action">记录</string>
+    <string name="onboarding_age_update_prompt">你的年龄已更新，建议重新计算热量预算</string>
+    <string name="onboarding_age_update_action">立即更新</string>
+
+    <!-- Activity levels -->
+    <string name="activity_sedentary_title">久坐</string>
+    <string name="activity_sedentary_subtitle">办公室工作，几乎不运动</string>
+    <string name="activity_light_title">轻度活动</string>
+    <string name="activity_light_subtitle">每周运动1-3次</string>
+    <string name="activity_moderate_title">中度活动</string>
+    <string name="activity_moderate_subtitle">每周运动3-5次</string>
+    <string name="activity_active_title">高度活动</string>
+    <string name="activity_active_subtitle">每周运动6-7次</string>
+    <string name="activity_athlete_title">运动员</string>
+    <string name="activity_athlete_subtitle">每天高强度训练或体力工作</string>
+
+    <!-- Settings -->
+    <string name="settings_title">设置</string>
+    <string name="settings_section_account">账号</string>
+    <string name="settings_section_goal">目标</string>
+    <string name="settings_section_data">数据</string>
+    <string name="settings_section_preferences">偏好</string>
+    <string name="settings_section_about">关于</string>
+    <string name="settings_my_goal">我的目标</string>
+    <string name="settings_email_unverified">邮箱未验证，去验证</string>
+    <string name="settings_email_unverified_badge">未验证</string>
+    <string name="settings_resend_verification">重新发送</string>
+    <string name="settings_change_password">修改密码</string>
+    <string name="settings_logout">退出登录</string>
+    <string name="settings_delete_account">注销账号</string>
+    <string name="settings_about">关于与数据来源</string>
+    <string name="settings_backup">云端备份</string>
+    <string name="settings_backup_pending">待备份%1$d条，点击重试</string>
+    <string name="settings_custom_foods_count">共 %1$d 个</string>
+    <string name="settings_diagnostics">诊断信息</string>
+    <string name="settings_theme">主题</string>
+    <string name="logout_message">退出后本地数据会保留，重新登录即可继续使用。</string>
+    <string name="logout_message_pending">还有 %1$d 条数据尚未备份到云端。退出登录不会删除本地数据，但建议先完成备份。</string>
+    <string name="logout_backup_first">先备份再退出</string>
+    <string name="delete_account_message">注销后将永久删除你的账号与云端数据，本机数据也会被清除，此操作不可撤销。</string>
+    <string name="delete_account_confirm_title">输入密码确认注销</string>
+    <string name="delete_account_password_hint">当前密码</string>
+    <string name="delete_account_failed">注销失败，你的数据未被删除，请稍后重试</string>
+    <string name="delete_account_wrong_password">密码不正确，账号未注销</string>
+    <string name="account_deleted_success">账号已注销</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="change_password_current">当前密码</string>
+    <string name="change_password_new">新密码</string>
+    <string name="change_password_confirm">确认新密码</string>
+    <string name="change_password_wrong_current">当前密码不正确</string>
+    <string name="change_password_failed">修改密码失败，请重试</string>
+
+    <!-- About (SC-17) -->
+    <string name="about_title">关于</string>
+    <string name="about_version">版本 %1$s (%2$d)</string>
+    <string name="about_version_short">%1$s (%2$d)</string>
+    <string name="about_data_sources_title">数据来源</string>
+    <string name="about_fatsecret_attribution">部分食物营养数据来源：FatSecret Platform API</string>
+    <string name="about_off_attribution">部分食物营养数据来源：Open Food Facts（ODbL 许可）</string>
+    <string name="about_china_food_table">常见食物营养数据参考中国食物成分表</string>
+    <string name="about_analytics_title">数据采集说明</string>
+    <string name="about_privacy_title">隐私说明</string>
+    <string name="about_privacy_body">你的健康数据存储在本机 Room 数据库，并在你登录后同步至你的 Supabase 账号。可通过「导出我的数据」导出，或通过「注销账号」删除云端与本机数据。</string>
+    <string name="about_disclaimer">本应用提供的热量与营养数据仅供参考，不构成医疗或营养建议。</string>
+    <string name="about_oss_title">开源许可</string>
+    <string name="about_oss_body">本应用使用 Jetpack Compose、Room、Retrofit、Hilt、Vico 等开源库。完整许可信息请参阅各库官方文档。</string>
+
+    <!-- Diagnostics (SC-18) -->
+    <string name="diagnostics_title">诊断信息</string>
+    <string name="diagnostics_pending_title">待备份统计</string>
+    <string name="diagnostics_all_synced">全部已同步</string>
+    <string name="diagnostics_pending_item">%1$s：%2$d 条</string>
+    <string name="diagnostics_errors_title">最近错误</string>
+    <string name="diagnostics_no_errors">暂无错误</string>
+    <string name="diagnostics_retry_all">重试全部</string>
+    <string name="diagnostics_copy">复制诊断信息</string>
+    <string name="diagnostics_copied">诊断信息已复制</string>
+
+    <!-- Common -->
+    <string name="common_cancel">取消</string>
+    <string name="common_confirm">确认</string>
+    <string name="common_continue">继续</string>
+    <string name="common_save">保存</string>
+    <string name="common_copied">已复制</string>
+    <string name="common_retry">重试</string>
+    <string name="external_link_no_browser">没有可用的浏览器，链接：%1$s</string>
+    <string name="common_kcal">大卡</string>
+    <string name="common_go_login">去登录</string>
+    <string name="common_go_register">去注册</string>
+
+    <!-- Units -->
+    <string name="unit_gram">g</string>
+    <string name="unit_ml">ml</string>
+
+    <!-- Meal logging (REQ-005) -->
+    <string name="meal_search_title">记录饮食</string>
+    <string name="meal_search_hint">搜索食物</string>
+    <string name="meal_data_source">数据来源：%1$s</string>
+    <string name="meal_recent_title">最近与常吃</string>
+    <string name="meal_recent_section">最近吃过</string>
+    <string name="meal_frequent_section">常吃</string>
+    <string name="meal_recent_empty">还没有记录过食物，搜索或创建自建食物开始记录吧</string>
+    <string name="meal_no_results">没有找到「%1$s」</string>
+    <string name="meal_create_custom">找不到？创建自建食物</string>
+    <string name="meal_log">记录</string>
+    <string name="meal_save">保存</string>
+    <string name="meal_delete">删除</string>
+    <string name="meal_edit_title">编辑饮食</string>
+    <string name="meal_serving_grams_label">每份重量（g）</string>
+    <string name="meal_save_failed">保存失败，请重试</string>
+    <string name="meal_delete_failed">删除失败，请重试</string>
+    <string name="meal_delete_confirm_title">删除这条记录？</string>
+    <string name="meal_delete_confirm_message">删除后可在 5 秒内从首页撤销。</string>
+    <string name="meal_entry_not_found">这条记录已被删除</string>
+    <string name="meal_zero_kcal_title">确认记录</string>
+    <string name="meal_zero_kcal_message">这条食物没有热量数据，记录后不会计入预算，确认继续？</string>
+    <string name="meal_banner_offline">离线中，仅显示本地食物</string>
+    <string name="meal_banner_remote_loading">正在搜索在线食物库…</string>
+    <string name="meal_banner_remote_timeout">在线食物库暂时无法访问</string>
+    <string name="meal_banner_remote_unavailable">在线食物库暂时无法访问</string>
+    <string name="meal_banner_quota">今日在线食物库查询已达上限，正在使用本地数据</string>
+    <string name="meal_banner_cache">显示的是缓存结果</string>
+
+    <!-- Custom food (REQ-008) -->
+    <string name="settings_custom_foods">我的自建食物</string>
+    <string name="custom_food_create_title">创建自建食物</string>
+    <string name="custom_food_edit_title">编辑自建食物</string>
+    <string name="custom_food_list_title">自建食物</string>
+    <string name="custom_food_list_empty">还没有自建食物，点击右下角 + 创建</string>
+    <string name="custom_food_list_item_subtitle">%1$d 大卡/100%2$s</string>
+    <string name="custom_food_name_label">食物名称</string>
+    <string name="custom_food_basis_label">基准单位</string>
+    <string name="custom_food_basis_g">每 100g</string>
+    <string name="custom_food_basis_ml">每 100ml</string>
+    <string name="custom_food_kcal_label">热量（大卡/%1$s）</string>
+    <string name="custom_food_protein_label">蛋白质（g/%1$s）</string>
+    <string name="custom_food_carb_label">碳水化合物（g/%1$s）</string>
+    <string name="custom_food_fat_label">脂肪（g/%1$s）</string>
+    <string name="custom_food_serving_label">每份重量（%1$s，选填）</string>
+    <string name="custom_food_serving_hint">填写后可使用「份」作为记录单位</string>
+    <string name="custom_food_error_name">食物名称需为 1–50 个字符</string>
+    <string name="custom_food_error_kcal">热量需大于 0 且不超过 900 大卡</string>
+    <string name="custom_food_error_macro">蛋白质/碳水/脂肪需在 0–100 之间</string>
+    <string name="custom_food_error_macro_min">蛋白质、碳水、脂肪中至少 2 项需大于 0</string>
+    <string name="custom_food_error_serving">每份重量需大于 0</string>
+    <string name="custom_food_duplicate_title">已存在同名食物</string>
+    <string name="custom_food_duplicate_message">已存在同名食物「%1$s」，是否覆盖？</string>
+    <string name="custom_food_duplicate_overwrite">覆盖</string>
+    <string name="custom_food_delete_title">删除自建食物？</string>
+    <string name="custom_food_delete_message">删除后该食物的 %1$d 条历史饮食记录不受影响，是否确认？</string>
+
+    <!-- Weight chart (REQ-009) -->
+    <string name="weight_title">体重</string>
+    <string name="weight_unit_kg">kg</string>
+    <string name="weight_record_title">记录体重</string>
+    <string name="weight_edit_title">编辑体重</string>
+    <string name="weight_input_label">体重</string>
+    <string name="weight_date_label">日期</string>
+    <string name="weight_date_locked_hint">日期不可修改，如需更改请删除后重新记录</string>
+    <string name="weight_tap_to_change_date">点击修改日期</string>
+    <string name="weight_note_label">备注（选填）</string>
+    <string name="weight_range_7d">7 天</string>
+    <string name="weight_range_30d">30 天</string>
+    <string name="weight_range_90d">90 天</string>
+    <string name="weight_chart_empty">这段时间还没有记录</string>
+    <string name="weight_chart_single_point">再记录一次就能看到变化趋势</string>
+    <string name="weight_history_title">历史记录</string>
+    <string name="weight_history_empty">还没有体重记录，点击右下角按钮开始</string>
+    <string name="weight_progress_label">起始 %1$s kg → 目标 %2$s kg</string>
+    <string name="weight_progress_percent">已完成 %1$d%%</string>
+    <string name="weight_maintain_distance">与目标相差 %1$s kg</string>
+    <string name="weight_overwrite_title">更新已有记录？</string>
+    <string name="weight_overwrite_message">%1$s 已记录 %2$s kg，要更新为 %3$s kg 吗？</string>
+    <string name="weight_large_diff_title">确认体重变化</string>
+    <string name="weight_large_diff_message">与上次记录相差 %1$s kg，请确认输入无误</string>
+    <string name="weight_delete_title">删除体重记录？</string>
+    <string name="weight_delete_message">确定删除 %1$s 的 %2$s kg 记录吗？</string>
+    <string name="weight_save_failed">保存失败，请重试</string>
+    <string name="weight_error_range">体重需在 25.0-300.0 kg 之间</string>
+
+    <!-- Backup (REQ-011) -->
+    <string name="backup_now">立即备份</string>
+    <string name="backup_all_synced">全部已备份</string>
+    <string name="backup_never">尚未备份</string>
+    <string name="backup_last_at">上次备份：%1$s</string>
+    <string name="backup_in_progress">备份中 %1$d/%2$d</string>
+    <string name="backup_restore_action">从云端恢复</string>
+    <string name="backup_restore_title">从云端恢复</string>
+    <string name="backup_restore_message">从云端恢复会用云端数据完全替换本机数据。</string>
+    <string name="backup_restore_message_pending">从云端恢复会用云端数据完全替换本机数据。本机有 %1$d 条尚未备份的数据，恢复后将丢失。</string>
+    <string name="backup_restore_continue">继续恢复</string>
+    <string name="backup_restore_backup_first">先备份</string>
+    <string name="backup_restore_confirm_title">确认放弃未备份数据？</string>
+    <string name="backup_restore_confirm_message">确认放弃本机 %1$d 条未备份数据？</string>
+    <string name="backup_restore_success">恢复完成</string>
+    <string name="backup_restore_failed">恢复失败，请重试</string>
+    <string name="backup_restore_offline">离线中，无法恢复</string>
+
+    <string name="settings_export">导出我的数据</string>
+    <string name="settings_export_subtitle">备份或迁移本地数据</string>
+    <string name="export_title">数据导出</string>
+    <string name="export_description">导出内容包含你的全部档案、饮食、体重、食物与预算数据，可用于备份或迁移。</string>
+    <string name="export_format_label">导出格式</string>
+    <string name="export_format_both">两者都要（JSON + CSV）</string>
+    <string name="export_format_json">JSON（完整结构化）</string>
+    <string name="export_format_csv">CSV（表格，Excel 可打开）</string>
+    <string name="export_start">开始导出</string>
+    <string name="export_start_again">再次导出</string>
+    <string name="export_in_progress">正在导出 %1$s…</string>
+    <string name="export_cancelled">已取消</string>
+    <string name="export_saved_to">已保存到：%1$s</string>
+    <string name="export_empty_data">已导出，目前还没有记录数据</string>
+    <string name="export_share_again">再次分享</string>
+    <string name="export_copy_path">复制路径</string>
+    <string name="export_path_copied">路径已复制</string>
+    <string name="export_share_title">分享导出文件</string>
+    <string name="export_no_share_target">没有可用的分享方式，文件已保存到：%1$s</string>
+    <string name="export_error_storage">存储空间不足，请清理后重试</string>
+    <string name="export_error_failed">导出失败，请重试</string>
+
+    <string name="settings_analytics">参与使用数据采集</string>
+    <string name="settings_analytics_desc">我们收集匿名的使用数据来改进产品。数据不包含你的食物记录、体重等健康信息。</string>
+</resources>
