@@ -37,7 +37,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.healthcheckin.R
@@ -50,6 +52,7 @@ import com.example.healthcheckin.ui.screens.dashboard.components.HealthWarningBa
 import com.example.healthcheckin.ui.screens.dashboard.components.MacroProgressSection
 import com.example.healthcheckin.ui.screens.dashboard.components.MealListSection
 import com.example.healthcheckin.ui.screens.dashboard.components.WeightCard
+import com.example.healthcheckin.ui.theme.HealthCheckInDimens
 import com.example.healthcheckin.util.DateTimeUtil
 import kotlin.math.abs
 
@@ -105,9 +108,15 @@ fun DashboardScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(DateTimeUtil.formatDashboardDate(uiState.selectedDate))
+                        Text(
+                            text = DateTimeUtil.formatDashboardDate(uiState.selectedDate),
+                            style = MaterialTheme.typography.titleLarge,
+                        )
                         if (!uiState.isToday) {
-                            TextButton(onClick = viewModel::goToToday) {
+                            TextButton(
+                                onClick = viewModel::goToToday,
+                                modifier = Modifier.height(HealthCheckInDimens.MinTouchTarget),
+                            ) {
                                 Text(stringResource(R.string.dashboard_back_to_today))
                             }
                         }
@@ -116,50 +125,60 @@ fun DashboardScreen(
                 actions = {
                     uiState.syncBadge?.let { badge ->
                         if (badge.type != SyncBadgeType.NONE) {
-                            IconButton(onClick = {
-                                when (badge.type) {
-                                    SyncBadgeType.OFFLINE -> {
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(R.string.dashboard_sync_offline_toast),
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
+                            IconButton(
+                                onClick = {
+                                    when (badge.type) {
+                                        SyncBadgeType.OFFLINE -> {
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.dashboard_sync_offline_toast),
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
+                                        }
+                                        SyncBadgeType.PENDING -> {
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.dashboard_sync_pending_toast, badge.count),
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
+                                        }
+                                        SyncBadgeType.FAILED -> {
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.dashboard_sync_failed_toast, badge.count),
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
+                                            onNavigateDiagnostics()
+                                        }
+                                        else -> Unit
                                     }
-                                    SyncBadgeType.PENDING -> {
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(R.string.dashboard_sync_pending_toast, badge.count),
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
-                                    }
-                                    SyncBadgeType.FAILED -> {
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(R.string.dashboard_sync_failed_toast, badge.count),
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
-                                        onNavigateDiagnostics()
-                                    }
-                                    else -> Unit
-                                }
-                            }) {
+                                },
+                                modifier = Modifier.size(HealthCheckInDimens.MinTouchTarget),
+                            ) {
                                 Icon(
                                     imageVector = when (badge.type) {
                                         SyncBadgeType.OFFLINE -> Icons.Default.CloudOff
                                         SyncBadgeType.FAILED -> Icons.Default.Warning
                                         else -> Icons.Default.Sync
                                     },
-                                    contentDescription = null,
+                                    contentDescription = when (badge.type) {
+                                        SyncBadgeType.OFFLINE -> stringResource(R.string.dashboard_sync_offline_toast)
+                                        SyncBadgeType.FAILED -> stringResource(R.string.dashboard_sync_failed_toast, badge.count)
+                                        else -> stringResource(R.string.dashboard_sync_pending_toast, badge.count)
+                                    },
                                     tint = if (badge.type == SyncBadgeType.FAILED) {
-                                        MaterialTheme.colorScheme.secondary
+                                        MaterialTheme.colorScheme.error
                                     } else {
-                                        MaterialTheme.colorScheme.onSurface
+                                        MaterialTheme.colorScheme.onSurfaceVariant
                                     },
                                 )
                             }
                         }
                     }
-                    IconButton(onClick = onNavigateSettings) {
+                    IconButton(
+                        onClick = onNavigateSettings,
+                        modifier = Modifier.size(HealthCheckInDimens.MinTouchTarget),
+                    ) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_title))
                     }
                 },
@@ -169,7 +188,8 @@ fun DashboardScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { onNavigateAddMeal(uiState.selectedDate) },
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
             ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.dashboard_add_meal))
             }
@@ -186,13 +206,25 @@ fun DashboardScreen(
                 DashboardLoadState.LOADING -> DashboardSkeleton()
                 DashboardLoadState.ERROR -> {
                     Column(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(HealthCheckInDimens.PagePadding),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text(stringResource(R.string.dashboard_load_error))
-                        Button(onClick = viewModel::retryLoad) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = stringResource(R.string.dashboard_load_error),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Spacer(modifier = Modifier.height(HealthCheckInDimens.Space4))
+                        Button(
+                            onClick = viewModel::retryLoad,
+                            modifier = Modifier.height(HealthCheckInDimens.ButtonHeight),
+                        ) {
                             Text(stringResource(R.string.common_retry))
                         }
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                 }
                 DashboardLoadState.SUCCESS -> {
@@ -213,10 +245,12 @@ fun DashboardScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .verticalScroll(rememberScrollState())
-                                .padding(16.dp),
+                                .padding(HealthCheckInDimens.PagePadding),
                         ) {
                             if (uiState.showDeviceTimeWarning) {
-                                DeviceTimeWarningBanner(modifier = Modifier.padding(bottom = 12.dp))
+                                DeviceTimeWarningBanner(
+                                    modifier = Modifier.padding(bottom = HealthCheckInDimens.Space3),
+                                )
                             }
 
                             if (uiState.healthWarning != null && !uiState.healthWarningDismissed) {
@@ -233,6 +267,7 @@ fun DashboardScreen(
                                     } else {
                                         null
                                     },
+                                    modifier = Modifier.padding(bottom = HealthCheckInDimens.Space3),
                                 )
                             }
 
@@ -242,12 +277,12 @@ fun DashboardScreen(
                                 hasNoGoal = data?.hasNoGoal == true,
                                 budgetAbnormal = data?.budgetAbnormal == true,
                                 onSetupGoal = onNavigateOnboarding,
-                                modifier = Modifier.padding(bottom = 16.dp),
+                                modifier = Modifier.padding(bottom = HealthCheckInDimens.SectionGap),
                             )
 
                             MacroProgressSection(
                                 macros = data?.macros.orEmpty(),
-                                modifier = Modifier.padding(bottom = 16.dp),
+                                modifier = Modifier.padding(bottom = HealthCheckInDimens.SectionGap),
                             )
 
                             WeightCard(
@@ -255,7 +290,7 @@ fun DashboardScreen(
                                     null, null, false, null, false, false, null,
                                 ),
                                 onClick = onNavigateWeight,
-                                modifier = Modifier.padding(bottom = 16.dp),
+                                modifier = Modifier.padding(bottom = HealthCheckInDimens.SectionGap),
                             )
 
                             MealListSection(

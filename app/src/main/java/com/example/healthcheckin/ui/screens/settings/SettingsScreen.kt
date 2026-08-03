@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -27,8 +28,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -37,6 +38,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.healthcheckin.BuildConfig
 import com.example.healthcheckin.R
+import com.example.healthcheckin.ui.theme.HealthCheckInDimens
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -287,10 +289,13 @@ fun SettingsScreen(
                     headlineContent = {
                         Text(
                             stringResource(R.string.settings_delete_account),
-                            color = Color(0xFFF44336),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyLarge,
                         )
                     },
-                    modifier = Modifier.clickable(onClick = viewModel::requestDeleteAccount),
+                    modifier = Modifier
+                        .heightIn(min = HealthCheckInDimens.MinTouchTarget)
+                        .clickable(onClick = viewModel::requestDeleteAccount),
                 )
             }
 

@@ -2,41 +2,40 @@ package com.example.healthcheckin.ui.screens.settings
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.healthcheckin.R
 import com.example.healthcheckin.domain.model.ThemeMode
+import com.example.healthcheckin.ui.theme.HealthCheckInDimens
+import com.example.healthcheckin.ui.theme.HealthCheckInThemeExtras
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,8 +50,14 @@ fun ChangePasswordScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_change_password)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.size(HealthCheckInDimens.MinTouchTarget),
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.common_cancel),
+                        )
                     }
                 },
             )
@@ -62,7 +67,7 @@ fun ChangePasswordScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
+                .padding(HealthCheckInDimens.PagePadding),
         ) {
             OutlinedTextField(
                 value = uiState.currentPassword,
@@ -74,6 +79,7 @@ fun ChangePasswordScreen(
                 supportingText = uiState.currentPasswordError?.let {
                     { Text(stringResource(R.string.change_password_wrong_current)) }
                 },
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
@@ -83,9 +89,10 @@ fun ChangePasswordScreen(
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 isError = uiState.newPasswordError != null,
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp),
+                    .padding(top = HealthCheckInDimens.Space3),
             )
             OutlinedTextField(
                 value = uiState.confirmPassword,
@@ -97,19 +104,26 @@ fun ChangePasswordScreen(
                 supportingText = uiState.confirmPasswordError?.let {
                     { Text(stringResource(R.string.auth_error_password_mismatch)) }
                 },
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp),
+                    .padding(top = HealthCheckInDimens.Space3),
             )
             Button(
                 onClick = { viewModel.save(onSuccess = onBack) },
                 enabled = !uiState.isSaving,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 24.dp),
+                    .padding(top = HealthCheckInDimens.Space6)
+                    .heightIn(min = HealthCheckInDimens.ButtonHeight),
             ) {
                 if (uiState.isSaving) {
-                    CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .padding(end = HealthCheckInDimens.Space2)
+                            .size(20.dp),
+                        strokeWidth = 2.dp,
+                    )
                 }
                 Text(stringResource(R.string.common_save))
             }
@@ -123,15 +137,20 @@ private fun ThemeModeOption(
     selected: Boolean,
     onSelect: () -> Unit,
 ) {
-    androidx.compose.foundation.layout.Row(
+    Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = HealthCheckInDimens.MinTouchTarget)
             .clickable(onClick = onSelect)
-            .padding(vertical = 2.dp),
+            .padding(vertical = HealthCheckInDimens.Space1),
     ) {
         RadioButton(selected = selected, onClick = onSelect)
-        Text(text = label, modifier = Modifier.padding(start = 8.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(start = HealthCheckInDimens.Space2),
+        )
     }
 }
 
@@ -140,7 +159,12 @@ fun ThemeModeSelector(
     selected: ThemeMode,
     onSelect: (ThemeMode) -> Unit,
 ) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+    Column(
+        modifier = Modifier.padding(
+            horizontal = HealthCheckInDimens.PagePadding,
+            vertical = HealthCheckInDimens.Space2,
+        ),
+    ) {
         ThemeModeOption(
             label = stringResource(R.string.theme_system),
             selected = selected == ThemeMode.SYSTEM,
@@ -165,7 +189,10 @@ fun SettingsSectionHeader(title: String) {
         text = title,
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = Modifier.padding(
+            horizontal = HealthCheckInDimens.PagePadding,
+            vertical = HealthCheckInDimens.Space3,
+        ),
     )
 }
 
@@ -173,7 +200,7 @@ fun SettingsSectionHeader(title: String) {
 fun UnverifiedBadge() {
     Text(
         text = stringResource(R.string.settings_email_unverified_badge),
-        color = Color(0xFFFF9800),
+        color = HealthCheckInThemeExtras.extendedColors.warning,
         style = MaterialTheme.typography.labelMedium,
     )
 }

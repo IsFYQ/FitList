@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -51,7 +52,10 @@ import com.example.healthcheckin.R
 import com.example.healthcheckin.domain.model.WeightChartRange
 import com.example.healthcheckin.domain.model.WeightProgressInfo
 import com.example.healthcheckin.domain.model.WeightRecordItem
+import androidx.compose.material.icons.outlined.MonitorWeight
+import com.example.healthcheckin.ui.components.AppEmptyState
 import com.example.healthcheckin.ui.screens.dashboard.components.weightDeltaColor
+import com.example.healthcheckin.ui.theme.HealthCheckInDimens
 import com.example.healthcheckin.util.DateTimeUtil
 import com.example.healthcheckin.util.GoalType
 import com.example.healthcheckin.util.PrecisionUtil
@@ -166,7 +170,11 @@ fun WeightChartScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = viewModel::openCreateSheet) {
+            FloatingActionButton(
+                onClick = viewModel::openCreateSheet,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.weight_record_title))
             }
         },
@@ -180,7 +188,7 @@ fun WeightChartScreen(
             item {
                 WeightStatusCard(
                     record = uiState.latestRecord,
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(HealthCheckInDimens.PagePadding),
                 )
             }
 
@@ -219,11 +227,9 @@ fun WeightChartScreen(
 
             if (uiState.historyRecords.isEmpty()) {
                 item {
-                    Text(
-                        text = stringResource(R.string.weight_history_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    AppEmptyState(
+                        title = stringResource(R.string.weight_history_empty),
+                        icon = Icons.Outlined.MonitorWeight,
                     )
                 }
             } else {
@@ -258,8 +264,12 @@ private fun WeightStatusCard(
     record: WeightRecordItem?,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(20.dp)) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Column(modifier = Modifier.padding(HealthCheckInDimens.Space5)) {
             if (record == null) {
                 Text(
                     text = stringResource(R.string.dashboard_weight_empty),
@@ -269,8 +279,8 @@ private fun WeightStatusCard(
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
                         text = PrecisionUtil.roundWeightDisplay(record.weightKg).toString(),
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.displaySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = stringResource(R.string.weight_unit_kg),
@@ -379,23 +389,23 @@ private fun WeightChartSection(
     ) {
         when {
             records.isEmpty() -> {
-                Text(
-                    text = stringResource(R.string.weight_chart_empty),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                AppEmptyState(
+                    title = stringResource(R.string.weight_chart_empty),
+                    icon = Icons.Outlined.MonitorWeight,
                 )
             }
             records.size == 1 -> {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = "${PrecisionUtil.roundWeightDisplay(records.first().weightKg)} kg",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = stringResource(R.string.weight_chart_single_point),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        modifier = Modifier.padding(top = 8.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = HealthCheckInDimens.Space2),
                     )
                 }
             }

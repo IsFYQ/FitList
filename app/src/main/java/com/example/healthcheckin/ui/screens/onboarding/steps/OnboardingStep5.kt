@@ -18,9 +18,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.healthcheckin.R
 import com.example.healthcheckin.domain.algorithm.GoalCalculationResult
-import com.example.healthcheckin.ui.theme.HealthCheckInColors
+import com.example.healthcheckin.ui.theme.HealthCheckInDimens
+import com.example.healthcheckin.ui.theme.HealthCheckInRadius
+import com.example.healthcheckin.ui.theme.HealthCheckInThemeExtras
 import com.example.healthcheckin.util.PrecisionUtil
 import kotlin.math.abs
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun OnboardingStep5(
@@ -147,14 +150,17 @@ private fun MacroCard(
 
 @Composable
 private fun WarningBanner(text: String) {
+    val warning = HealthCheckInThemeExtras.extendedColors.warning
     Card(
-        colors = CardDefaults.cardColors(containerColor = HealthCheckInColors.CalorieWarn.copy(alpha = 0.15f)),
+        shape = RoundedCornerShape(HealthCheckInRadius.Card),
+        colors = CardDefaults.cardColors(containerColor = warning.copy(alpha = 0.16f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(12.dp),
-            color = HealthCheckInColors.CalorieWarn,
+            modifier = Modifier.padding(HealthCheckInDimens.Space3),
+            color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.bodyMedium,
         )
     }

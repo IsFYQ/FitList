@@ -23,6 +23,8 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -42,6 +44,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.healthcheckin.R
+import com.example.healthcheckin.ui.theme.HealthCheckInDimens
+import com.example.healthcheckin.ui.theme.HealthCheckInRadius
 import com.example.healthcheckin.util.BasisUnit
 import com.example.healthcheckin.util.DateTimeUtil
 import com.example.healthcheckin.util.MealUnit
@@ -77,6 +81,11 @@ fun MealConfirmSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        shape = RoundedCornerShape(
+            topStart = HealthCheckInRadius.Sheet,
+            topEnd = HealthCheckInRadius.Sheet,
+        ),
+        containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
             modifier = Modifier
@@ -224,7 +233,10 @@ fun MealConfirmSheet(
             Button(
                 onClick = onSubmit,
                 enabled = state.canSubmit && !state.isSaving,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = HealthCheckInDimens.ButtonHeight),
+                shape = RoundedCornerShape(HealthCheckInRadius.Button),
             ) {
                 Text(
                     if (state.isEditMode) {

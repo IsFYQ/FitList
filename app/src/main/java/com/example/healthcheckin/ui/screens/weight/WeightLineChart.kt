@@ -26,8 +26,10 @@ fun WeightLineChart(
     val maxWeight = maxOf(weights.maxOrNull()!!, targetWeightKg ?: weights.maxOrNull()!!) + 1.0
     val weightRange = (maxWeight - minWeight).coerceAtLeast(0.1)
 
-    val lineColor = MaterialTheme.colorScheme.primary
-    val targetColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f)
+    // Chart lines use Secondary (sky blue) per design system.
+    val lineColor = MaterialTheme.colorScheme.secondary
+    val targetColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.85f)
+    val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
 
     Canvas(
         modifier = modifier
@@ -41,13 +43,24 @@ fun WeightLineChart(
             return size.height - (ratio * size.height)
         }
 
+        // Subtle horizontal guides
+        for (i in 1..3) {
+            val y = size.height * i / 4f
+            drawLine(
+                color = gridColor,
+                start = Offset(0f, y),
+                end = Offset(size.width, y),
+                strokeWidth = 1f,
+            )
+        }
+
         targetWeightKg?.let { target ->
             val targetY = yFor(target)
             drawLine(
                 color = targetColor,
                 start = Offset(0f, targetY),
                 end = Offset(size.width, targetY),
-                strokeWidth = 2f,
+                strokeWidth = 2.5f,
                 cap = StrokeCap.Round,
             )
         }
@@ -72,7 +85,7 @@ fun WeightLineChart(
         records.forEachIndexed { index, record ->
             drawCircle(
                 color = lineColor,
-                radius = 6f,
+                radius = 8f,
                 center = Offset(stepX * index, yFor(record.weightKg)),
             )
         }

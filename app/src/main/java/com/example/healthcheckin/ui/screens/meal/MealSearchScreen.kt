@@ -14,6 +14,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -41,6 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.healthcheckin.R
 import com.example.healthcheckin.domain.model.FoodSearchItem
 import com.example.healthcheckin.domain.model.SearchBanner
+import com.example.healthcheckin.ui.components.AppEmptyState
 import com.example.healthcheckin.util.DateTimeUtil
 import com.example.healthcheckin.util.PrecisionUtil
 
@@ -152,11 +155,9 @@ fun MealSearchScreen(
                 if (showRecent) {
                     if (recent.isEmpty() && frequent.isEmpty()) {
                         item {
-                            Text(
-                                text = stringResource(R.string.meal_recent_empty),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
+                            AppEmptyState(
+                                title = stringResource(R.string.meal_recent_empty),
+                                icon = Icons.Outlined.Restaurant,
                             )
                         }
                     } else {
@@ -196,14 +197,10 @@ fun MealSearchScreen(
 
                     if (!uiState.isSearching && uiState.query.isNotBlank() && uiState.searchResults.isEmpty()) {
                         item {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(32.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Text(stringResource(R.string.meal_no_results, uiState.query))
-                            }
+                            AppEmptyState(
+                                title = stringResource(R.string.meal_no_results, uiState.query),
+                                icon = Icons.Outlined.SearchOff,
+                            )
                         }
                     }
                 }

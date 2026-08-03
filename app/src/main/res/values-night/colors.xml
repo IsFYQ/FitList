@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background_dark">#1A2320</color>
+    <color name="brand_primary">#4CCD90</color>
+    <color name="calorie_normal">#4CCD90</color>
+    <color name="calorie_warn">#FFD06A</color>
+    <color name="calorie_over">#F57B79</color>
+</resources>
