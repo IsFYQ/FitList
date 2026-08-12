@@ -7,6 +7,11 @@ enum class BackupTable(val tableName: String, val label: String) {
     FOODS("foods", "食物库"),
     MEAL_ENTRIES("meal_entries", "饮食记录"),
     WEIGHT_RECORDS("weight_records", "体重记录"),
+    BODY_MEASUREMENTS("body_measurements", "围度记录"),
+    MILESTONES("milestones", "里程碑"),
+    INVENTORY_ITEMS("inventory_items", "食材库存"),
+    INVENTORY_LEDGER("inventory_ledger", "库存流水"),
+    INGREDIENT_BINDINGS("ingredient_bindings", "食材绑定"),
     ANALYTICS_EVENTS("analytics_events", "埋点事件"),
     ;
 

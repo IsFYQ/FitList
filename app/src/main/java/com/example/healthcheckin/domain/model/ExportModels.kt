@@ -6,9 +6,14 @@ enum class ExportTable(val fileName: String, val progressLabel: String) {
     PROFILE("profile.csv", "档案"),
     GOALS("goals.csv", "目标"),
     DAILY_BUDGETS("daily_budgets.csv", "每日预算"),
-    FOODS("foods.csv", "食物库"),
+    FOODS("foods.csv", "食物"),
     MEAL_ENTRIES("meal_entries.csv", "饮食记录"),
     WEIGHT_RECORDS("weight_records.csv", "体重记录"),
+    BODY_MEASUREMENTS("body_measurements.csv", "围度记录"),
+    MILESTONES("milestones.csv", "里程碑"),
+    INVENTORY_ITEMS("inventory_items.csv", "食材库存"),
+    INVENTORY_LEDGER("inventory_ledger.csv", "库存流水"),
+    INGREDIENT_BINDINGS("ingredient_bindings.csv", "食材绑定"),
 }
 
 data class ExportProgress(

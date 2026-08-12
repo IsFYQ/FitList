@@ -70,6 +70,13 @@ fun MealConfirmSheet(
     onSubmit: () -> Unit,
     onDismissZeroKcal: () -> Unit,
     onConfirmZeroKcal: () -> Unit,
+    onToggleDeduct: (Boolean) -> Unit = {},
+    onOpenInventoryPicker: () -> Unit = {},
+    onSelectInventoryItem: (String) -> Unit = {},
+    onDismissInventoryPicker: () -> Unit = {},
+    onConfirmL3: () -> Unit = {},
+    onDismissL3: () -> Unit = {},
+    onResolveInsufficient: (com.example.healthcheckin.util.InventoryDeductResolution) -> Unit = {},
     onDelete: (() -> Unit)? = null,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -181,6 +188,37 @@ fun MealConfirmSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            val match = state.inventoryMatch
+            if (match?.item != null && match.level != com.example.healthcheckin.util.InventoryMatchLevel.NONE) {
+                val item = match.item!!
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Checkbox(checked = state.deductChecked, onCheckedChange = onToggleDeduct)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            stringResource(
+                                R.string.meal_inventory_deduct,
+                                item.name,
+                                PrecisionUtil.roundStorage(item.remainingAmount).toString(),
+                                item.unit.labelZh,
+                            ),
+                        )
+                        Text(
+                            when (match.level) {
+                                com.example.healthcheckin.util.InventoryMatchLevel.L1 -> stringResource(R.string.meal_inventory_match_l1)
+                                com.example.healthcheckin.util.InventoryMatchLevel.L2 -> stringResource(R.string.meal_inventory_match_l2)
+                                else -> stringResource(R.string.meal_inventory_match_l3)
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                    TextButton(onClick = onOpenInventoryPicker) { Text(stringResource(R.string.meal_inventory_change)) }
+                }
+            } else if (!state.isEditMode) {
+                TextButton(onClick = onOpenInventoryPicker) { Text(stringResource(R.string.meal_inventory_bind)) }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 text = "${PrecisionUtil.roundCaloriesDisplay(state.nutrition.kcal)} ${stringResource(R.string.common_kcal)}",
                 fontSize = 36.sp,
@@ -188,9 +226,18 @@ fun MealConfirmSheet(
                 color = MaterialTheme.colorScheme.primary,
             )
             val macroLine = buildString {
-                state.nutrition.proteinG?.let { append("蛋白 ${PrecisionUtil.roundMacroDisplay(it)}g  ") }
-                state.nutrition.carbG?.let { append("碳水 ${PrecisionUtil.roundMacroDisplay(it)}g  ") }
-                state.nutrition.fatG?.let { append("脂肪 ${PrecisionUtil.roundMacroDisplay(it)}g") }
+                state.nutrition.proteinG?.let {
+                    append(stringResource(R.string.onboarding_macro_protein))
+                    append(" ${PrecisionUtil.roundMacroDisplay(it)}g  ")
+                }
+                state.nutrition.carbG?.let {
+                    append(stringResource(R.string.onboarding_macro_carb))
+                    append(" ${PrecisionUtil.roundMacroDisplay(it)}g  ")
+                }
+                state.nutrition.fatG?.let {
+                    append(stringResource(R.string.onboarding_macro_fat))
+                    append(" ${PrecisionUtil.roundMacroDisplay(it)}g")
+                }
             }
             if (macroLine.isNotBlank()) {
                 Text(
@@ -207,14 +254,15 @@ fun MealConfirmSheet(
                     FilterChip(
                         selected = state.mealSlot == item.slot,
                         onClick = { onMealSlotChange(item.slot) },
-                        label = { Text(item.label) },
+                        label = { Text(stringResource(item.labelRes)) },
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            val dateFormatter = remember { DateTimeFormatter.ofPattern("M月d日") }
+            val datePattern = stringResource(R.string.meal_date_format)
+            val dateFormatter = remember(datePattern) { DateTimeFormatter.ofPattern(datePattern) }
             val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -316,6 +364,51 @@ fun MealConfirmSheet(
             },
         )
     }
+
+    if (state.showInsufficientDialog && state.inventoryMatch?.item != null) {
+        val item = state.inventoryMatch.item!!
+        AlertDialog(
+            onDismissRequest = { onResolveInsufficient(com.example.healthcheckin.util.InventoryDeductResolution.SKIP) },
+            title = { Text(stringResource(R.string.meal_inventory_short_title)) },
+            text = { Text(item.name) },
+            confirmButton = {
+                Column {
+                    TextButton(onClick = { onResolveInsufficient(com.example.healthcheckin.util.InventoryDeductResolution.DEDUCT_REMAINING) }) {
+                        Text(stringResource(R.string.meal_inventory_opt_remaining))
+                    }
+                    TextButton(onClick = { onResolveInsufficient(com.example.healthcheckin.util.InventoryDeductResolution.SKIP) }) {
+                        Text(stringResource(R.string.meal_inventory_opt_skip))
+                    }
+                }
+            },
+        )
+    }
+    if (state.showL3Confirm && state.inventoryMatch?.item != null) {
+        AlertDialog(
+            onDismissRequest = onDismissL3,
+            title = { Text(stringResource(R.string.common_confirm)) },
+            text = { Text(stringResource(R.string.meal_inventory_l3_confirm, state.inventoryMatch.item!!.name)) },
+            confirmButton = { TextButton(onClick = onConfirmL3) { Text(stringResource(R.string.common_confirm)) } },
+            dismissButton = { TextButton(onClick = onDismissL3) { Text(stringResource(R.string.common_cancel)) } },
+        )
+    }
+    if (state.showInventoryPicker) {
+        AlertDialog(
+            onDismissRequest = onDismissInventoryPicker,
+            title = { Text(stringResource(R.string.meal_inventory_pick_title)) },
+            text = {
+                Column {
+                    state.inventoryCandidates.forEach { item ->
+                        TextButton(onClick = { onSelectInventoryItem(item.id) }) {
+                            Text(item.name + " " + PrecisionUtil.roundStorage(item.remainingAmount) + item.unit.labelZh)
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = onDismissInventoryPicker) { Text(stringResource(R.string.common_cancel)) } },
+        )
+    }
 }
 
 private fun buildAvailableUnits(state: MealConfirmUiState): List<MealUnit> {
@@ -330,14 +423,20 @@ private fun buildAvailableUnits(state: MealConfirmUiState): List<MealUnit> {
     return units
 }
 
+@Composable
 private fun unitLabel(unit: MealUnit): String = when (unit) {
-    MealUnit.G -> "克(g)"
-    MealUnit.ML -> "毫升(ml)"
-    MealUnit.SERVING -> "份"
+    MealUnit.G -> stringResource(R.string.meal_unit_gram)
+    MealUnit.ML -> stringResource(R.string.meal_unit_ml)
+    MealUnit.SERVING -> stringResource(R.string.meal_unit_serving)
 }
 
 private fun quickQuantityChips(state: MealConfirmUiState): List<Double> =
     if (state.unit == MealUnit.SERVING) listOf(0.5, 1.0, 1.5, 2.0) else listOf(50.0, 100.0, 150.0, 200.0)
 
+@Composable
 private fun quickQuantityLabel(state: MealConfirmUiState, value: Double): String =
-    if (state.unit == MealUnit.SERVING) "${value}份" else "${value.toInt()}g"
+    if (state.unit == MealUnit.SERVING) {
+        stringResource(R.string.meal_serving_quantity, value.toString())
+    } else {
+        "${value.toInt()}g"
+    }

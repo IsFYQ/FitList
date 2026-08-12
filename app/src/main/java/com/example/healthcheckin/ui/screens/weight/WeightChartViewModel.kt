@@ -210,19 +210,32 @@ class WeightChartViewModel @Inject constructor(
                         overwrite = overwrite,
                     ).fold(
                         onSuccess = { saved ->
+                            val record = saved.first
+                            val achievements = saved.second
                             analyticsTracker.track(
                                 AnalyticsEvents.WEIGHT_RECORDED,
                                 mapOf(
                                     "delta_bucket" to AnalyticsParamBuilder.weightDeltaBucket(
-                                        saved.deltaKg,
-                                        saved.deltaKg == null,
+                                        record.deltaKg,
+                                        record.deltaKg == null,
                                     ),
                                     "is_backfill" to state.inputState.localDate.isBefore(DateTimeUtil.todayLocalDate()),
                                     "is_overwrite" to overwrite,
                                 ),
                             )
+                            achievements.forEach {
+                                analyticsTracker.track(
+                                    AnalyticsEvents.MILESTONE_ACHIEVED,
+                                    mapOf("days_elapsed" to it.daysElapsed),
+                                )
+                            }
                             _uiState.update {
-                                it.copy(isSaving = false, showInputSheet = false, overwritePrompt = null)
+                                it.copy(
+                                    isSaving = false,
+                                    showInputSheet = false,
+                                    overwritePrompt = null,
+                                    achievementQueue = it.achievementQueue + achievements,
+                                )
                             }
                         },
                         onFailure = { error ->
@@ -255,9 +268,13 @@ class WeightChartViewModel @Inject constructor(
                         weightKg = weight,
                         note = state.inputState.note.takeIf { it.isNotBlank() },
                     ).fold(
-                        onSuccess = {
+                        onSuccess = { saved ->
                             _uiState.update {
-                                it.copy(isSaving = false, showInputSheet = false)
+                                it.copy(
+                                    isSaving = false,
+                                    showInputSheet = false,
+                                    achievementQueue = it.achievementQueue + saved.second,
+                                )
                             }
                         },
                         onFailure = {
@@ -291,6 +308,10 @@ class WeightChartViewModel @Inject constructor(
 
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    fun dismissAchievement() {
+        _uiState.update { it.copy(achievementQueue = it.achievementQueue.drop(1)) }
     }
 
     private fun filterByRange(

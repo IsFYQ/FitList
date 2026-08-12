@@ -236,6 +236,13 @@ fun MealSearchScreen(
             onSubmit = viewModel::submit,
             onDismissZeroKcal = viewModel::dismissZeroKcalDialog,
             onConfirmZeroKcal = viewModel::confirmZeroKcal,
+            onToggleDeduct = viewModel::toggleDeduct,
+            onOpenInventoryPicker = viewModel::openInventoryPicker,
+            onSelectInventoryItem = viewModel::selectInventoryItem,
+            onDismissInventoryPicker = viewModel::dismissInventoryPicker,
+            onConfirmL3 = viewModel::confirmL3Deduct,
+            onDismissL3 = viewModel::dismissL3Confirm,
+            onResolveInsufficient = { resolution -> viewModel.resolveInsufficient(resolution) },
         )
     }
 }

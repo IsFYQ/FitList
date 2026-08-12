@@ -261,6 +261,140 @@ CREATE POLICY analytics_events_update_own ON analytics_events FOR UPDATE USING (
 CREATE POLICY analytics_events_delete_own ON analytics_events FOR DELETE USING (auth.uid() = user_id);
 
 -- ============================================================
+-- P1 tracking and inventory tables
+-- ============================================================
+CREATE TABLE IF NOT EXISTS body_measurements (
+    id UUID PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    metric TEXT NOT NULL,
+    local_date DATE NOT NULL,
+    tz_offset_minutes INT NOT NULL,
+    value_cm NUMERIC(8,2) NOT NULL,
+    device_id TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_body_measurements_user_metric_date
+    ON body_measurements(user_id, metric, local_date) WHERE deleted_at IS NULL;
+
+ALTER TABLE body_measurements ENABLE ROW LEVEL SECURITY;
+CREATE POLICY body_measurements_select_own ON body_measurements FOR SELECT USING (auth.uid()::text = user_id);
+CREATE POLICY body_measurements_insert_own ON body_measurements FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY body_measurements_update_own ON body_measurements FOR UPDATE USING (auth.uid()::text = user_id) WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY body_measurements_delete_own ON body_measurements FOR DELETE USING (auth.uid()::text = user_id);
+
+CREATE TABLE IF NOT EXISTS milestones (
+    id UUID PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    target_weight_kg NUMERIC(6,2) NOT NULL,
+    reward_text TEXT,
+    achieved_at TIMESTAMPTZ,
+    achieved_weight_kg NUMERIC(6,2),
+    days_elapsed INT,
+    shared_count INT NOT NULL DEFAULT 0,
+    device_id TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_milestones_user_achieved
+    ON milestones(user_id, achieved_at) WHERE deleted_at IS NULL;
+
+ALTER TABLE milestones ENABLE ROW LEVEL SECURITY;
+CREATE POLICY milestones_select_own ON milestones FOR SELECT USING (auth.uid()::text = user_id);
+CREATE POLICY milestones_insert_own ON milestones FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY milestones_update_own ON milestones FOR UPDATE USING (auth.uid()::text = user_id) WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY milestones_delete_own ON milestones FOR DELETE USING (auth.uid()::text = user_id);
+
+CREATE TABLE IF NOT EXISTS inventory_items (
+    id UUID PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    name_normalized TEXT NOT NULL,
+    ingredient_key TEXT,
+    category TEXT NOT NULL,
+    initial_amount NUMERIC(10,2) NOT NULL,
+    remaining_amount NUMERIC(10,2) NOT NULL,
+    unit TEXT NOT NULL,
+    piece_grams NUMERIC(10,2),
+    purchase_date DATE NOT NULL,
+    expiry_date DATE,
+    unit_price NUMERIC(10,2),
+    version INT NOT NULL DEFAULT 0,
+    entry_source TEXT NOT NULL DEFAULT 'MANUAL',
+    raw_text TEXT,
+    device_id TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_inventory_items_user_category_expiry
+    ON inventory_items(user_id, category, expiry_date) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_inventory_items_user_normalized
+    ON inventory_items(user_id, name_normalized) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_inventory_items_user_ingredient
+    ON inventory_items(user_id, ingredient_key) WHERE deleted_at IS NULL;
+
+ALTER TABLE inventory_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY inventory_items_select_own ON inventory_items FOR SELECT USING (auth.uid()::text = user_id);
+CREATE POLICY inventory_items_insert_own ON inventory_items FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY inventory_items_update_own ON inventory_items FOR UPDATE USING (auth.uid()::text = user_id) WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY inventory_items_delete_own ON inventory_items FOR DELETE USING (auth.uid()::text = user_id);
+
+CREATE TABLE IF NOT EXISTS inventory_ledger (
+    id UUID PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    inventory_item_id UUID NOT NULL REFERENCES inventory_items(id) ON DELETE CASCADE,
+    change_type TEXT NOT NULL,
+    delta_amount NUMERIC(10,2) NOT NULL,
+    balance_after NUMERIC(10,2) NOT NULL,
+    ref_meal_entry_id UUID REFERENCES meal_entries(id) ON DELETE SET NULL,
+    note TEXT,
+    device_id TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_inventory_ledger_user_item
+    ON inventory_ledger(user_id, inventory_item_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_inventory_ledger_ref_meal_entry
+    ON inventory_ledger(ref_meal_entry_id) WHERE deleted_at IS NULL;
+
+ALTER TABLE inventory_ledger ENABLE ROW LEVEL SECURITY;
+CREATE POLICY inventory_ledger_select_own ON inventory_ledger FOR SELECT USING (auth.uid()::text = user_id);
+CREATE POLICY inventory_ledger_insert_own ON inventory_ledger FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY inventory_ledger_update_own ON inventory_ledger FOR UPDATE USING (auth.uid()::text = user_id) WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY inventory_ledger_delete_own ON inventory_ledger FOR DELETE USING (auth.uid()::text = user_id);
+
+CREATE TABLE IF NOT EXISTS ingredient_bindings (
+    id UUID PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    food_id UUID NOT NULL REFERENCES foods(id) ON DELETE CASCADE,
+    inventory_item_id UUID NOT NULL REFERENCES inventory_items(id) ON DELETE CASCADE,
+    device_id TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ingredient_bindings_user_food
+    ON ingredient_bindings(user_id, food_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_ingredient_bindings_inventory_item
+    ON ingredient_bindings(inventory_item_id) WHERE deleted_at IS NULL;
+
+ALTER TABLE ingredient_bindings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY ingredient_bindings_select_own ON ingredient_bindings FOR SELECT USING (auth.uid()::text = user_id);
+CREATE POLICY ingredient_bindings_insert_own ON ingredient_bindings FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY ingredient_bindings_update_own ON ingredient_bindings FOR UPDATE USING (auth.uid()::text = user_id) WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY ingredient_bindings_delete_own ON ingredient_bindings FOR DELETE USING (auth.uid()::text = user_id);
+
+-- ============================================================
 -- api_quota_counter (Edge Function food-search, service role only)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS api_quota_counter (

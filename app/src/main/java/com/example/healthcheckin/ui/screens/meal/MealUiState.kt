@@ -1,5 +1,9 @@
 package com.example.healthcheckin.ui.screens.meal
 
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.example.healthcheckin.R
 import com.example.healthcheckin.domain.model.FoodSearchItem
 import com.example.healthcheckin.domain.model.MealNutritionPreview
 import com.example.healthcheckin.domain.model.RecentFrequentFoods
@@ -39,23 +43,32 @@ data class MealConfirmUiState(
     val showZeroKcalDialog: Boolean = false,
     val isEditMode: Boolean = false,
     val entryId: String? = null,
+    val inventoryMatch: com.example.healthcheckin.domain.model.InventoryMatchResult? = null,
+    val inventoryPreview: com.example.healthcheckin.domain.model.InventoryDeductPreview? = null,
+    val deductChecked: Boolean = false,
+    val showInsufficientDialog: Boolean = false,
+    val showL3Confirm: Boolean = false,
+    val showInventoryPicker: Boolean = false,
+    val inventoryCandidates: List<com.example.healthcheckin.domain.model.InventoryItem> = emptyList(),
 )
 
-enum class MealSlotLabel(val slot: MealSlot, val label: String) {
-    BREAKFAST(MealSlot.BREAKFAST, "早餐"),
-    LUNCH(MealSlot.LUNCH, "午餐"),
-    DINNER(MealSlot.DINNER, "晚餐"),
-    SNACK(MealSlot.SNACK, "加餐"),
+enum class MealSlotLabel(val slot: MealSlot, @StringRes val labelRes: Int) {
+    BREAKFAST(MealSlot.BREAKFAST, R.string.meal_slot_breakfast),
+    LUNCH(MealSlot.LUNCH, R.string.meal_slot_lunch),
+    DINNER(MealSlot.DINNER, R.string.meal_slot_dinner),
+    SNACK(MealSlot.SNACK, R.string.meal_slot_snack),
 }
 
+@Composable
 fun foodSourceLabel(source: String): String = when (source) {
-    "CUSTOM" -> "自建"
-    "PUBLIC" -> "常见食物"
+    "CUSTOM" -> stringResource(R.string.meal_source_custom)
+    "PUBLIC" -> stringResource(R.string.meal_source_public)
     "FATSECRET" -> "FatSecret"
     "OFF" -> "Open Food Facts"
     else -> source
 }
 
+@Composable
 fun foodDataSourceText(source: String): String? = when (source) {
     "FATSECRET", "OFF", "PUBLIC" -> foodSourceLabel(source)
     else -> null
@@ -66,14 +79,15 @@ fun basisUnitLabel(unit: String): String = when (unit) {
     else -> "g"
 }
 
+@Composable
 fun lastPortionLabel(food: FoodSearchItem): String? {
     val quantity = food.lastQuantity ?: return null
     val unit = food.lastUnit ?: return null
     val unitLabel = when (unit.name) {
-        "ML" -> "ml"
-        "SERVING" -> "份"
-        else -> "g"
+        "ML" -> stringResource(R.string.unit_ml)
+        "SERVING" -> stringResource(R.string.meal_unit_serving)
+        else -> stringResource(R.string.unit_gram)
     }
     val qtyText = if (quantity % 1.0 == 0.0) quantity.toInt().toString() else quantity.toString()
-    return "上次 $qtyText$unitLabel"
+    return stringResource(R.string.meal_last_portion, qtyText, unitLabel)
 }

@@ -5,6 +5,7 @@ import com.example.healthcheckin.util.FoodSource
 import com.example.healthcheckin.util.MealEntrySource
 import com.example.healthcheckin.util.MealSlot
 import com.example.healthcheckin.util.MealUnit
+import com.example.healthcheckin.domain.model.InventoryDeductChoice
 
 data class FoodSearchItem(
     val foodId: String?,
@@ -81,6 +82,8 @@ data class AddMealRequest(
     val consumedAt: Long,
     val mealSlot: MealSlot,
     val entrySource: MealEntrySource,
+    val inventoryItemId: String? = null,
+    val deductChoice: InventoryDeductChoice? = null,
 )
 
 data class UpdateMealRequest(

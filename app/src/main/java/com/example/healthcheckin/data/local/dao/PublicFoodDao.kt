@@ -24,4 +24,7 @@ interface PublicFoodDao {
 
     @Query("SELECT COUNT(*) FROM public_foods")
     suspend fun count(): Int
+
+    @Query("DELETE FROM public_foods")
+    suspend fun deleteAll()
 }

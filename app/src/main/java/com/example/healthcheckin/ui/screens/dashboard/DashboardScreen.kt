@@ -1,6 +1,6 @@
 package com.example.healthcheckin.ui.screens.dashboard
 
-import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,15 +10,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -36,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -43,7 +42,6 @@ import androidx.compose.foundation.layout.size
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.healthcheckin.R
-import com.example.healthcheckin.domain.model.SyncBadgeType
 import com.example.healthcheckin.domain.model.showBackfillAction
 import com.example.healthcheckin.ui.screens.dashboard.components.CalorieCard
 import com.example.healthcheckin.ui.screens.dashboard.components.DashboardSkeleton
@@ -60,11 +58,11 @@ import kotlin.math.abs
 @Composable
 fun DashboardScreen(
     onNavigateSettings: () -> Unit,
-    onNavigateDiagnostics: () -> Unit = onNavigateSettings,
     onNavigateOnboarding: () -> Unit,
     onNavigateAddMeal: (localDate: String) -> Unit,
     onNavigateMealEdit: (entryId: String) -> Unit,
     onNavigateWeight: () -> Unit,
+    onNavigateBodyMeasurements: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -123,58 +121,6 @@ fun DashboardScreen(
                     }
                 },
                 actions = {
-                    uiState.syncBadge?.let { badge ->
-                        if (badge.type != SyncBadgeType.NONE) {
-                            IconButton(
-                                onClick = {
-                                    when (badge.type) {
-                                        SyncBadgeType.OFFLINE -> {
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.dashboard_sync_offline_toast),
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
-                                        }
-                                        SyncBadgeType.PENDING -> {
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.dashboard_sync_pending_toast, badge.count),
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
-                                        }
-                                        SyncBadgeType.FAILED -> {
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.dashboard_sync_failed_toast, badge.count),
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
-                                            onNavigateDiagnostics()
-                                        }
-                                        else -> Unit
-                                    }
-                                },
-                                modifier = Modifier.size(HealthCheckInDimens.MinTouchTarget),
-                            ) {
-                                Icon(
-                                    imageVector = when (badge.type) {
-                                        SyncBadgeType.OFFLINE -> Icons.Default.CloudOff
-                                        SyncBadgeType.FAILED -> Icons.Default.Warning
-                                        else -> Icons.Default.Sync
-                                    },
-                                    contentDescription = when (badge.type) {
-                                        SyncBadgeType.OFFLINE -> stringResource(R.string.dashboard_sync_offline_toast)
-                                        SyncBadgeType.FAILED -> stringResource(R.string.dashboard_sync_failed_toast, badge.count)
-                                        else -> stringResource(R.string.dashboard_sync_pending_toast, badge.count)
-                                    },
-                                    tint = if (badge.type == SyncBadgeType.FAILED) {
-                                        MaterialTheme.colorScheme.error
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    },
-                                )
-                            }
-                        }
-                    }
                     IconButton(
                         onClick = onNavigateSettings,
                         modifier = Modifier.size(HealthCheckInDimens.MinTouchTarget),
@@ -290,7 +236,14 @@ fun DashboardScreen(
                                     null, null, false, null, false, false, null,
                                 ),
                                 onClick = onNavigateWeight,
-                                modifier = Modifier.padding(bottom = HealthCheckInDimens.SectionGap),
+                                modifier = Modifier.padding(bottom = HealthCheckInDimens.Space2),
+                            )
+
+                            androidx.compose.material3.ListItem(
+                                headlineContent = { Text(stringResource(R.string.body_entry_from_dashboard)) },
+                                modifier = Modifier
+                                    .padding(bottom = HealthCheckInDimens.SectionGap)
+                                    .clickable(onClick = onNavigateBodyMeasurements),
                             )
 
                             MealListSection(

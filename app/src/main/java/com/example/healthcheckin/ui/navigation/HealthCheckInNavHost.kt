@@ -75,7 +75,7 @@ fun HealthCheckInNavHost(
                             }
                         }
                         SplashDestination.Dashboard -> {
-                            navController.navigate(DashboardRoute) {
+                            navController.navigate(MainRoute) {
                                 popUpTo(SplashRoute) { inclusive = true }
                             }
                         }
@@ -93,7 +93,7 @@ fun HealthCheckInNavHost(
                         val route = if (needsOnboarding) {
                             OnboardingRoute(isEditMode = false)
                         } else {
-                            DashboardRoute
+                            MainRoute
                         }
                         navController.navigate(route) {
                             popUpTo(LoginRoute) { inclusive = true }
@@ -149,7 +149,7 @@ fun HealthCheckInNavHost(
                 OnboardingScreen(
                     isEditMode = route.isEditMode,
                     onComplete = { _, _ ->
-                        val dest = if (route.isEditMode) SettingsRoute else DashboardRoute
+                        val dest = if (route.isEditMode) SettingsRoute else MainRoute
                         navController.navigate(dest) {
                             popUpTo<OnboardingRoute> { inclusive = true }
                         }
@@ -158,10 +158,9 @@ fun HealthCheckInNavHost(
                 )
             }
 
-            composable<DashboardRoute> {
-                DashboardScreen(
+            composable<MainRoute> {
+                MainTabScaffold(
                     onNavigateSettings = { navController.navigate(SettingsRoute) },
-                    onNavigateDiagnostics = { navController.navigate(DiagnosticsRoute) },
                     onNavigateOnboarding = {
                         navController.navigate(OnboardingRoute(isEditMode = true))
                     },
@@ -171,9 +170,47 @@ fun HealthCheckInNavHost(
                     onNavigateMealEdit = { entryId ->
                         navController.navigate(MealEditRoute(entryId = entryId))
                     },
-                    onNavigateWeight = {
-                        navController.navigate(WeightChartRoute)
+                    onNavigateBodyMeasurements = { navController.navigate(BodyMeasurementsRoute) },
+                    onNavigateMilestones = { navController.navigate(MilestonesRoute) },
+                    onNavigateInventoryForm = { itemId ->
+                        navController.navigate(InventoryFormRoute(itemId = itemId))
                     },
+                )
+            }
+
+            composable<BodyMeasurementsRoute> {
+                com.example.healthcheckin.ui.screens.body.BodyMeasurementsScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenMetric = { metric ->
+                        navController.navigate(BodyMetricDetailRoute(metric = metric))
+                    },
+                )
+            }
+
+            composable<BodyMetricDetailRoute> { entry ->
+                val route = entry.toRoute<BodyMetricDetailRoute>()
+                com.example.healthcheckin.ui.screens.body.BodyMetricDetailScreen(
+                    metricName = route.metric,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+
+            composable<MilestonesRoute> {
+                com.example.healthcheckin.ui.screens.milestone.MilestonesScreen(
+                    onBack = { navController.popBackStack() },
+                )
+            }
+
+            composable<InventoryFormRoute> { entry ->
+                val route = entry.toRoute<InventoryFormRoute>()
+                com.example.healthcheckin.ui.screens.inventory.InventoryFormScreen(
+                    onBack = { navController.popBackStack() },
+                )
+            }
+
+            composable<IngredientBindingsRoute> {
+                com.example.healthcheckin.ui.screens.inventory.IngredientBindingsScreen(
+                    onBack = { navController.popBackStack() },
                 )
             }
 
@@ -245,7 +282,10 @@ fun HealthCheckInNavHost(
             }
 
             composable<WeightChartRoute> {
-                WeightChartScreen(onBack = { navController.popBackStack() })
+                WeightChartScreen(
+                    onBack = { navController.popBackStack() },
+                    onNavigateMilestones = { navController.navigate(MilestonesRoute) },
+                )
             }
 
             composable<ExportRoute> {
@@ -269,21 +309,19 @@ fun HealthCheckInNavHost(
                     onNavigateChangePassword = { navController.navigate(ChangePasswordRoute) },
                     onLogoutComplete = {
                         navController.navigate(LoginRoute) {
-                            popUpTo(DashboardRoute) { inclusive = true }
+                            popUpTo(MainRoute) { inclusive = true }
                             launchSingleTop = true
                         }
                     },
                     onAccountDeleted = {
                         navController.navigate(RegisterRoute) {
-                            popUpTo(DashboardRoute) { inclusive = true }
+                            popUpTo(MainRoute) { inclusive = true }
                             launchSingleTop = true
                         }
                     },
-                    onRestoreComplete = {
-                        navController.navigate(DashboardRoute) {
-                            popUpTo(DashboardRoute) { inclusive = true }
-                        }
-                    },
+                    onNavigateMilestones = { navController.navigate(MilestonesRoute) },
+                    onNavigateBindings = { navController.navigate(IngredientBindingsRoute) },
+                    onNavigateBodyMeasurements = { navController.navigate(BodyMeasurementsRoute) },
                 )
             }
 

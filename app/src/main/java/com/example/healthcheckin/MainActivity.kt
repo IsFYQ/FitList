@@ -9,7 +9,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.example.healthcheckin.data.auth.PasswordResetStore
 import com.example.healthcheckin.data.local.seed.PublicFoodSeeder
-import com.example.healthcheckin.domain.repository.BackupRepository
+import com.example.healthcheckin.domain.repository.IngredientBindingRepository
 import com.example.healthcheckin.ui.navigation.HealthCheckInNavHost
 import com.example.healthcheckin.ui.theme.HealthCheckInTheme
 import com.example.healthcheckin.data.preferences.ThemePreferences
@@ -22,16 +22,16 @@ import androidx.compose.runtime.getValue
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject lateinit var backupRepository: BackupRepository
     @Inject lateinit var themePreferences: ThemePreferences
     @Inject lateinit var passwordResetStore: PasswordResetStore
     @Inject lateinit var publicFoodSeeder: PublicFoodSeeder
+    @Inject lateinit var ingredientBindingRepository: IngredientBindingRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         lifecycleScope.launch {
-            backupRepository.scheduleBackup()
-            publicFoodSeeder.seedIfEmpty()
+            publicFoodSeeder.seedIfNeeded()
+            ingredientBindingRepository.ensureAliasesSeeded()
         }
         handleDeepLink(intent)
         enableEdgeToEdge()

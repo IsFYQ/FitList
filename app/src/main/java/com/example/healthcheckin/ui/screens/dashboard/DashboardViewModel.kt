@@ -104,10 +104,6 @@ class DashboardViewModel @Inject constructor(
                 _uiState.update { state -> state.copy(loadState = DashboardLoadState.ERROR) }
             }.launchIn(viewModelScope)
 
-            dashboardRepository.observeSyncBadge().onEach { badge ->
-                _uiState.update { it.copy(syncBadge = badge) }
-            }.launchIn(viewModelScope)
-
             _uiState.update {
                 it.copy(showDeviceTimeWarning = dashboardRepository.isDeviceTimeSuspicious())
             }
@@ -163,7 +159,6 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshing = true) }
             sessionManager.getUserId()?.let { dashboardRepository.ensureTodayBudget(it) }
-            dashboardRepository.triggerManualBackup()
             delay(500)
             _uiState.update {
                 it.copy(

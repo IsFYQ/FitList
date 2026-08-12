@@ -10,6 +10,8 @@ import com.example.healthcheckin.domain.algorithm.WeightProgressCalculator
 import com.example.healthcheckin.domain.model.SaveWeightRequest
 import com.example.healthcheckin.domain.model.WeightRecordItem
 import com.example.healthcheckin.domain.repository.WeightRepository
+import com.example.healthcheckin.domain.repository.MilestoneRepository
+import com.example.healthcheckin.domain.model.MilestoneAchievementEvent
 import com.example.healthcheckin.util.DateTimeUtil
 import com.example.healthcheckin.util.PrecisionUtil
 import com.example.healthcheckin.util.SyncState
@@ -26,6 +28,7 @@ class WeightRepositoryImpl @Inject constructor(
     private val database: HealthDatabase,
     private val weightRecordDao: WeightRecordDao,
     private val syncQueueDao: SyncQueueDao,
+    private val milestoneRepository: MilestoneRepository,
     private val deviceId: String,
 ) : WeightRepository {
 
@@ -53,7 +56,7 @@ class WeightRepositoryImpl @Inject constructor(
         userId: String,
         request: SaveWeightRequest,
         overwrite: Boolean,
-    ): Result<WeightRecordItem> = runCatching {
+    ): Result<Pair<WeightRecordItem, List<MilestoneAchievementEvent>>> = runCatching {
         validateWeight(request.weightKg)
         validateDate(request.localDate)
 
@@ -99,13 +102,14 @@ class WeightRepositoryImpl @Inject constructor(
             val previous = weightRecordDao.getPreviousBeforeDate(userId, record.localDate)
             record.toItem(previous?.weightKg)
         }
+        .let { item -> item to milestoneRepository.evaluateOnWeightRecorded(userId, item.weightKg, item.localDate) }
     }
 
     override suspend fun updateWeight(
         recordId: String,
         weightKg: Double,
         note: String?,
-    ): Result<WeightRecordItem> = runCatching {
+    ): Result<Pair<WeightRecordItem, List<MilestoneAchievementEvent>>> = runCatching {
         validateWeight(weightKg)
         val existing = weightRecordDao.getById(recordId)
             ?: throw IllegalStateException("Record not found")
@@ -125,6 +129,7 @@ class WeightRepositoryImpl @Inject constructor(
             val previous = weightRecordDao.getPreviousBeforeDate(existing.userId, existing.localDate)
             updated.toItem(previous?.weightKg)
         }
+        .let { item -> item to milestoneRepository.evaluateOnWeightRecorded(existing.userId, item.weightKg, item.localDate) }
     }
 
     override suspend fun deleteWeight(recordId: String): Result<Unit> = runCatching {

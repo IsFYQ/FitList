@@ -30,6 +30,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -42,6 +43,8 @@ class MealSearchViewModel @Inject constructor(
     private val foodSearchService: FoodSearchService,
     private val foodRepository: FoodRepository,
     private val mealRepository: MealRepository,
+    private val inventoryRepository: com.example.healthcheckin.domain.repository.InventoryRepository,
+    private val bindingRepository: com.example.healthcheckin.domain.repository.IngredientBindingRepository,
     private val dashboardRepository: DashboardRepository,
     private val sessionManager: SessionManager,
     private val profileDao: ProfileDao,
@@ -147,6 +150,7 @@ class MealSearchViewModel @Inject constructor(
         mealFlowStartedAt = System.currentTimeMillis()
         val confirm = buildInitialConfirmState(food, fromRecent)
         _uiState.update { it.copy(selectedFood = food, selectedFromRecent = fromRecent, confirmState = confirm) }
+        refreshInventoryMatch()
     }
 
     fun dismissConfirm() {
@@ -162,6 +166,7 @@ class MealSearchViewModel @Inject constructor(
                 canSubmit = validateConfirm(state.copy(quantityText = filtered)),
             )
         }
+        refreshInventoryMatch()
     }
 
     fun adjustQuantity(delta: Double) {
@@ -244,7 +249,24 @@ class MealSearchViewModel @Inject constructor(
                 consumedAt = consumedAt,
                 mealSlot = confirm.mealSlot,
                 entrySource = if (fromRecent) MealEntrySource.RECENT else MealEntrySource.SEARCH,
+                inventoryItemId = if (confirm.deductChecked) confirm.inventoryMatch?.item?.id else null,
+                deductChoice = if (confirm.deductChecked && confirm.inventoryMatch?.item != null) {
+                    com.example.healthcheckin.domain.model.InventoryDeductChoice(
+                        resolution = if (confirm.inventoryPreview?.insufficient == true) {
+                            com.example.healthcheckin.util.InventoryDeductResolution.DEDUCT_REMAINING
+                        } else {
+                            com.example.healthcheckin.util.InventoryDeductResolution.DEDUCT_REMAINING
+                        },
+                    )
+                } else null,
             )
+            if (confirm.deductChecked && confirm.inventoryPreview?.insufficient == true && !confirm.showInsufficientDialog) {
+                _uiState.update { it.copy(confirmState = confirm.copy(isSaving = false, showInsufficientDialog = true)) }
+                return@launch
+            }
+            if (confirm.deductChecked && confirm.inventoryMatch?.level == com.example.healthcheckin.util.InventoryMatchLevel.L3 && !confirm.showL3Confirm && confirm.deductChecked) {
+                // L3 already confirmed via checkbox path below
+            }
             mealRepository.addMeal(userId, request).fold(
                 onSuccess = { entry ->
                     val durationMs = mealFlowStartedAt?.let {
@@ -260,7 +282,8 @@ class MealSearchViewModel @Inject constructor(
                             "entry_source" to (if (fromRecent) MealEntrySource.RECENT else MealEntrySource.SEARCH).name,
                             "food_source" to entry.snapSource,
                             "is_backfill" to _uiState.value.isBackfill,
-                            "from_inventory" to false,
+                            "from_inventory" to (entry.fromInventory),
+                            "inventory_match_level" to (confirm.inventoryMatch?.level?.name ?: "NONE"),
                         ),
                     )
                     mealFlowStartedAt = null
@@ -300,6 +323,130 @@ class MealSearchViewModel @Inject constructor(
 
     fun clearSavedEntry() {
         _uiState.update { it.copy(savedEntryId = null) }
+    }
+
+    fun toggleDeduct(checked: Boolean) {
+        val confirm = _uiState.value.confirmState ?: return
+        if (checked && confirm.inventoryMatch?.level == com.example.healthcheckin.util.InventoryMatchLevel.L3) {
+            updateConfirm { it.copy(deductChecked = false, showL3Confirm = true) }
+            return
+        }
+        updateConfirm { it.copy(deductChecked = checked) }
+    }
+
+    fun confirmL3Deduct() = updateConfirm { it.copy(showL3Confirm = false, deductChecked = true) }
+    fun dismissL3Confirm() = updateConfirm { it.copy(showL3Confirm = false, deductChecked = false) }
+
+    fun resolveInsufficient(resolution: com.example.healthcheckin.util.InventoryDeductResolution, manualAmount: Double? = null) {
+        updateConfirm {
+            it.copy(
+                showInsufficientDialog = false,
+                deductChecked = resolution != com.example.healthcheckin.util.InventoryDeductResolution.SKIP,
+            )
+        }
+        val confirm = _uiState.value.confirmState ?: return
+        viewModelScope.launch {
+            val userId = sessionManager.getUserId() ?: return@launch
+            val quantity = Validators.parseDecimalInput(confirm.quantityText) ?: return@launch
+            val servingGrams = confirm.servingGramsText.takeIf { it.isNotBlank() }?.let { Validators.parseDecimalInput(it) }
+            val consumedAt = DateTimeUtil.combineDateAndTime(confirm.localDate, confirm.time)
+            mealRepository.addMeal(
+                userId,
+                AddMealRequest(
+                    food = confirm.food,
+                    quantity = quantity,
+                    unit = confirm.unit,
+                    servingGrams = servingGrams,
+                    consumedAt = consumedAt,
+                    mealSlot = confirm.mealSlot,
+                    entrySource = if (_uiState.value.selectedFromRecent) MealEntrySource.RECENT else MealEntrySource.SEARCH,
+                    inventoryItemId = if (resolution == com.example.healthcheckin.util.InventoryDeductResolution.SKIP) null else confirm.inventoryMatch?.item?.id,
+                    deductChoice = if (resolution == com.example.healthcheckin.util.InventoryDeductResolution.SKIP) null else {
+                        com.example.healthcheckin.domain.model.InventoryDeductChoice(resolution, manualAmount)
+                    },
+                ),
+            ).onSuccess { entry ->
+                _uiState.update { it.copy(confirmState = null, selectedFood = null, savedEntryId = entry.id) }
+            }.onFailure {
+                _uiState.update { it.copy(errorMessage = "save_failed") }
+            }
+        }
+    }
+
+    fun openInventoryPicker() {
+        viewModelScope.launch {
+            val userId = sessionManager.getUserId() ?: return@launch
+            val items = inventoryRepository.observeItems(userId)
+            items.first().let { list ->
+                updateConfirm {
+                    it.copy(
+                        showInventoryPicker = true,
+                        inventoryCandidates = list.filter { item -> item.remainingAmount > 0 },
+                    )
+                }
+            }
+        }
+    }
+
+    fun selectInventoryItem(itemId: String) {
+        viewModelScope.launch {
+            val userId = sessionManager.getUserId() ?: return@launch
+            val confirm = _uiState.value.confirmState ?: return@launch
+            val foodId = confirm.food.foodId
+            if (foodId != null) {
+                bindingRepository.bind(userId, foodId, itemId)
+                analyticsTracker.track(AnalyticsEvents.INGREDIENT_BINDING_CREATED, mapOf("trigger" to "MEAL_PAGE"))
+            }
+            updateConfirm { it.copy(showInventoryPicker = false, deductChecked = true) }
+            refreshInventoryMatch(forcedItemId = itemId)
+        }
+    }
+
+    fun dismissInventoryPicker() = updateConfirm { it.copy(showInventoryPicker = false) }
+
+    private fun refreshInventoryMatch(forcedItemId: String? = null) {
+        viewModelScope.launch {
+            val confirm = _uiState.value.confirmState ?: return@launch
+            val userId = sessionManager.getUserId() ?: return@launch
+            val quantity = Validators.parseDecimalInput(confirm.quantityText) ?: return@launch
+            val serving = effectiveServingGrams(confirm)
+            val basis = com.example.healthcheckin.domain.algorithm.MealNutritionCalculator.basisAmount(
+                quantity, confirm.unit, serving,
+            )
+            val match = if (forcedItemId != null) {
+                val item = inventoryRepository.getById(forcedItemId)
+                if (item != null) {
+                    com.example.healthcheckin.domain.model.InventoryMatchResult(
+                        com.example.healthcheckin.util.InventoryMatchLevel.L1,
+                        1.0,
+                        item,
+                        item.name,
+                    )
+                } else {
+                    inventoryRepository.matchForFood(
+                        userId, confirm.food.foodId, confirm.food.name, confirm.food.basisUnit, basis,
+                    )
+                }
+            } else {
+                inventoryRepository.matchForFood(
+                    userId, confirm.food.foodId, confirm.food.name, confirm.food.basisUnit, basis,
+                )
+            }
+            val preview = match.item?.id?.let {
+                inventoryRepository.previewDeduct(it, basis, confirm.food.basisUnit)
+            }
+            updateConfirm {
+                it.copy(
+                    inventoryMatch = match,
+                    inventoryPreview = preview,
+                    deductChecked = if (it.inventoryMatch?.item?.id == match.item?.id) {
+                        it.deductChecked || match.confidence >= 0.90
+                    } else {
+                        match.confidence >= 0.90
+                    },
+                )
+            }
+        }
     }
 
     private fun loadRecentFrequent(userId: String) {

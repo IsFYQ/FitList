@@ -38,4 +38,5 @@ data class WeightChartUiState(
     val minDate: String = "",
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
+    val achievementQueue: List<com.example.healthcheckin.domain.model.MilestoneAchievementEvent> = emptyList(),
 )

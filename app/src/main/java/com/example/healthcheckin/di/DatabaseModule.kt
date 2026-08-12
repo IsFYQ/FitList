@@ -37,4 +37,10 @@ object DatabaseModule {
     @Provides fun provideSyncStatusDao(db: HealthDatabase) = db.syncStatusDao()
     @Provides fun provideAppSettingDao(db: HealthDatabase) = db.appSettingDao()
     @Provides fun provideBackupStateDao(db: HealthDatabase) = db.backupStateDao()
+    @Provides fun provideBodyMeasurementDao(db: HealthDatabase) = db.bodyMeasurementDao()
+    @Provides fun provideMilestoneDao(db: HealthDatabase) = db.milestoneDao()
+    @Provides fun provideInventoryItemDao(db: HealthDatabase) = db.inventoryItemDao()
+    @Provides fun provideInventoryLedgerDao(db: HealthDatabase) = db.inventoryLedgerDao()
+    @Provides fun provideIngredientAliasDao(db: HealthDatabase) = db.ingredientAliasDao()
+    @Provides fun provideIngredientBindingDao(db: HealthDatabase) = db.ingredientBindingDao()
 }

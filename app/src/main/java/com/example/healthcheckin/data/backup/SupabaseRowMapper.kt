@@ -1,10 +1,15 @@
 package com.example.healthcheckin.data.backup
 
 import com.example.healthcheckin.data.local.entity.AnalyticsEventEntity
+import com.example.healthcheckin.data.local.entity.BodyMeasurementEntity
 import com.example.healthcheckin.data.local.entity.DailyBudgetEntity
 import com.example.healthcheckin.data.local.entity.FoodEntity
 import com.example.healthcheckin.data.local.entity.GoalEntity
+import com.example.healthcheckin.data.local.entity.IngredientBindingEntity
+import com.example.healthcheckin.data.local.entity.InventoryItemEntity
+import com.example.healthcheckin.data.local.entity.InventoryLedgerEntity
 import com.example.healthcheckin.data.local.entity.MealEntryEntity
+import com.example.healthcheckin.data.local.entity.MilestoneEntity
 import com.example.healthcheckin.data.local.entity.ProfileEntity
 import com.example.healthcheckin.data.local.entity.WeightRecordEntity
 import kotlinx.serialization.json.Json
@@ -46,6 +51,11 @@ object SupabaseRowMapper {
                 BackupTable.FOODS -> decodeFood(element.jsonObject)
                 BackupTable.MEAL_ENTRIES -> decodeMealEntry(element.jsonObject)
                 BackupTable.WEIGHT_RECORDS -> decodeWeightRecord(element.jsonObject)
+                BackupTable.BODY_MEASUREMENTS -> decodeBodyMeasurement(element.jsonObject)
+                BackupTable.MILESTONES -> decodeMilestone(element.jsonObject)
+                BackupTable.INVENTORY_ITEMS -> decodeInventoryItem(element.jsonObject)
+                BackupTable.INVENTORY_LEDGER -> decodeInventoryLedger(element.jsonObject)
+                BackupTable.INGREDIENT_BINDINGS -> decodeIngredientBinding(element.jsonObject)
                 BackupTable.ANALYTICS_EVENTS -> decodeAnalyticsEvent(element.jsonObject)
             }
         }
@@ -58,6 +68,11 @@ object SupabaseRowMapper {
         BackupTable.FOODS -> encodeFood(row as FoodEntity)
         BackupTable.MEAL_ENTRIES -> encodeMealEntry(row as MealEntryEntity)
         BackupTable.WEIGHT_RECORDS -> encodeWeightRecord(row as WeightRecordEntity)
+        BackupTable.BODY_MEASUREMENTS -> encodeBodyMeasurement(row as BodyMeasurementEntity)
+        BackupTable.MILESTONES -> encodeMilestone(row as MilestoneEntity)
+        BackupTable.INVENTORY_ITEMS -> encodeInventoryItem(row as InventoryItemEntity)
+        BackupTable.INVENTORY_LEDGER -> encodeInventoryLedger(row as InventoryLedgerEntity)
+        BackupTable.INGREDIENT_BINDINGS -> encodeIngredientBinding(row as IngredientBindingEntity)
         BackupTable.ANALYTICS_EVENTS -> encodeAnalyticsEvent(row as AnalyticsEventEntity)
     }
 
@@ -326,6 +341,167 @@ object SupabaseRowMapper {
         tzOffsetMinutes = obj.int("tz_offset_minutes"),
         weightKg = obj.double("weight_kg"),
         note = obj.stringOrNull("note"),
+        deviceId = obj.string("device_id"),
+        createdAt = obj.timestamp("created_at"),
+        updatedAt = obj.timestamp("updated_at"),
+        deletedAt = obj.timestampOrNull("deleted_at"),
+        syncState = "SYNCED",
+    )
+
+    private fun encodeBodyMeasurement(entity: BodyMeasurementEntity) = buildJsonObject {
+        put("id", entity.id)
+        put("user_id", entity.userId)
+        put("metric", entity.metric)
+        put("local_date", entity.localDate)
+        put("tz_offset_minutes", entity.tzOffsetMinutes)
+        putNumber("value_cm", entity.valueCm)
+        put("device_id", entity.deviceId)
+        putTimestamp("created_at", entity.createdAt)
+        putTimestamp("updated_at", entity.updatedAt)
+        putNullableTimestamp("deleted_at", entity.deletedAt)
+    }
+
+    private fun decodeBodyMeasurement(obj: JsonObject) = BodyMeasurementEntity(
+        id = obj.string("id"),
+        userId = obj.string("user_id"),
+        metric = obj.string("metric"),
+        localDate = obj.string("local_date"),
+        tzOffsetMinutes = obj.int("tz_offset_minutes"),
+        valueCm = obj.double("value_cm"),
+        deviceId = obj.string("device_id"),
+        createdAt = obj.timestamp("created_at"),
+        updatedAt = obj.timestamp("updated_at"),
+        deletedAt = obj.timestampOrNull("deleted_at"),
+        syncState = "SYNCED",
+    )
+
+    private fun encodeMilestone(entity: MilestoneEntity) = buildJsonObject {
+        put("id", entity.id)
+        put("user_id", entity.userId)
+        put("title", entity.title)
+        putNumber("target_weight_kg", entity.targetWeightKg)
+        putNullable("reward_text", entity.rewardText)
+        putNullableTimestamp("achieved_at", entity.achievedAt)
+        putNullableNumber("achieved_weight_kg", entity.achievedWeightKg)
+        putNullable("days_elapsed", entity.daysElapsed)
+        put("shared_count", entity.sharedCount)
+        put("device_id", entity.deviceId)
+        putTimestamp("created_at", entity.createdAt)
+        putTimestamp("updated_at", entity.updatedAt)
+        putNullableTimestamp("deleted_at", entity.deletedAt)
+    }
+
+    private fun decodeMilestone(obj: JsonObject) = MilestoneEntity(
+        id = obj.string("id"),
+        userId = obj.string("user_id"),
+        title = obj.string("title"),
+        targetWeightKg = obj.double("target_weight_kg"),
+        rewardText = obj.stringOrNull("reward_text"),
+        achievedAt = obj.timestampOrNull("achieved_at"),
+        achievedWeightKg = obj.doubleOrNull("achieved_weight_kg"),
+        daysElapsed = obj.intOrNull("days_elapsed"),
+        sharedCount = obj.intOrNull("shared_count") ?: 0,
+        deviceId = obj.string("device_id"),
+        createdAt = obj.timestamp("created_at"),
+        updatedAt = obj.timestamp("updated_at"),
+        deletedAt = obj.timestampOrNull("deleted_at"),
+        syncState = "SYNCED",
+    )
+
+    private fun encodeInventoryItem(entity: InventoryItemEntity) = buildJsonObject {
+        put("id", entity.id)
+        put("user_id", entity.userId)
+        put("name", entity.name)
+        put("name_normalized", entity.nameNormalized)
+        putNullable("ingredient_key", entity.ingredientKey)
+        put("category", entity.category)
+        putNumber("initial_amount", entity.initialAmount)
+        putNumber("remaining_amount", entity.remainingAmount)
+        put("unit", entity.unit)
+        putNullableNumber("piece_grams", entity.pieceGrams)
+        put("purchase_date", entity.purchaseDate)
+        putNullable("expiry_date", entity.expiryDate)
+        putNullableNumber("unit_price", entity.unitPrice)
+        put("version", entity.version)
+        put("entry_source", entity.entrySource)
+        putNullable("raw_text", entity.rawText)
+        put("device_id", entity.deviceId)
+        putTimestamp("created_at", entity.createdAt)
+        putTimestamp("updated_at", entity.updatedAt)
+        putNullableTimestamp("deleted_at", entity.deletedAt)
+    }
+
+    private fun decodeInventoryItem(obj: JsonObject) = InventoryItemEntity(
+        id = obj.string("id"),
+        userId = obj.string("user_id"),
+        name = obj.string("name"),
+        nameNormalized = obj.string("name_normalized"),
+        ingredientKey = obj.stringOrNull("ingredient_key"),
+        category = obj.string("category"),
+        initialAmount = obj.double("initial_amount"),
+        remainingAmount = obj.double("remaining_amount"),
+        unit = obj.string("unit"),
+        pieceGrams = obj.doubleOrNull("piece_grams"),
+        purchaseDate = obj.string("purchase_date"),
+        expiryDate = obj.stringOrNull("expiry_date"),
+        unitPrice = obj.doubleOrNull("unit_price"),
+        version = obj.intOrNull("version") ?: 0,
+        entrySource = obj.stringOrNull("entry_source") ?: "MANUAL",
+        rawText = obj.stringOrNull("raw_text"),
+        deviceId = obj.string("device_id"),
+        createdAt = obj.timestamp("created_at"),
+        updatedAt = obj.timestamp("updated_at"),
+        deletedAt = obj.timestampOrNull("deleted_at"),
+        syncState = "SYNCED",
+    )
+
+    private fun encodeInventoryLedger(entity: InventoryLedgerEntity) = buildJsonObject {
+        put("id", entity.id)
+        put("user_id", entity.userId)
+        put("inventory_item_id", entity.inventoryItemId)
+        put("change_type", entity.changeType)
+        putNumber("delta_amount", entity.deltaAmount)
+        putNumber("balance_after", entity.balanceAfter)
+        putNullable("ref_meal_entry_id", entity.refMealEntryId)
+        putNullable("note", entity.note)
+        put("device_id", entity.deviceId)
+        putTimestamp("created_at", entity.createdAt)
+        putTimestamp("updated_at", entity.updatedAt)
+        putNullableTimestamp("deleted_at", entity.deletedAt)
+    }
+
+    private fun decodeInventoryLedger(obj: JsonObject) = InventoryLedgerEntity(
+        id = obj.string("id"),
+        userId = obj.string("user_id"),
+        inventoryItemId = obj.string("inventory_item_id"),
+        changeType = obj.string("change_type"),
+        deltaAmount = obj.double("delta_amount"),
+        balanceAfter = obj.double("balance_after"),
+        refMealEntryId = obj.stringOrNull("ref_meal_entry_id"),
+        note = obj.stringOrNull("note"),
+        deviceId = obj.string("device_id"),
+        createdAt = obj.timestamp("created_at"),
+        updatedAt = obj.timestamp("updated_at"),
+        deletedAt = obj.timestampOrNull("deleted_at"),
+        syncState = "SYNCED",
+    )
+
+    private fun encodeIngredientBinding(entity: IngredientBindingEntity) = buildJsonObject {
+        put("id", entity.id)
+        put("user_id", entity.userId)
+        put("food_id", entity.foodId)
+        put("inventory_item_id", entity.inventoryItemId)
+        put("device_id", entity.deviceId)
+        putTimestamp("created_at", entity.createdAt)
+        putTimestamp("updated_at", entity.updatedAt)
+        putNullableTimestamp("deleted_at", entity.deletedAt)
+    }
+
+    private fun decodeIngredientBinding(obj: JsonObject) = IngredientBindingEntity(
+        id = obj.string("id"),
+        userId = obj.string("user_id"),
+        foodId = obj.string("food_id"),
+        inventoryItemId = obj.string("inventory_item_id"),
         deviceId = obj.string("device_id"),
         createdAt = obj.timestamp("created_at"),
         updatedAt = obj.timestamp("updated_at"),

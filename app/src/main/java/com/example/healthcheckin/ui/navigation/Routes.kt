@@ -57,3 +57,24 @@ object DiagnosticsRoute
 
 @Serializable
 object ChangePasswordRoute
+
+@Serializable
+object MainRoute
+
+@Serializable
+object BodyMeasurementsRoute
+
+@Serializable
+data class BodyMetricDetailRoute(val metric: String)
+
+@Serializable
+object MilestonesRoute
+
+@Serializable
+object InventoryRoute
+
+@Serializable
+data class InventoryFormRoute(val itemId: String? = null)
+
+@Serializable
+object IngredientBindingsRoute

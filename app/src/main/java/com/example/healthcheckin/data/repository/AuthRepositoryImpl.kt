@@ -210,6 +210,7 @@ class AuthRepositoryImpl @Inject constructor(
             runCatching { refreshToken() }
         }
         val active = sessionManager.session.value ?: return null
+        createProfileIfNeeded(active)
         analyticsTracker.onUserLoggedIn(active.userId)
         analyticsTracker.track(
             AnalyticsEvents.SIGN_IN_SUCCEEDED,

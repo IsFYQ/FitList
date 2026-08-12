@@ -7,20 +7,16 @@ import com.example.healthcheckin.data.local.dao.FoodDao
 import com.example.healthcheckin.data.preferences.ThemePreferences
 import com.example.healthcheckin.domain.analytics.AnalyticsEvents
 import com.example.healthcheckin.domain.analytics.AnalyticsTracker
-import com.example.healthcheckin.domain.model.BackupState
 import com.example.healthcheckin.domain.model.ThemeMode
 import com.example.healthcheckin.domain.repository.AuthRepository
-import com.example.healthcheckin.domain.repository.BackupRepository
 import com.example.healthcheckin.domain.repository.GoalRepository
 import com.example.healthcheckin.util.PrecisionUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,11 +29,6 @@ data class SettingsUiState(
     val budgetSubtitle: String? = null,
     val showAgeUpdatePrompt: Boolean = false,
     val customFoodCount: Int = 0,
-    val backupState: BackupState = BackupState(),
-    val showRestoreStep1: Boolean = false,
-    val showRestoreStep2: Boolean = false,
-    val isRestoring: Boolean = false,
-    val restoreCompleted: Boolean = false,
     val messageKey: String? = null,
     val analyticsEnabled: Boolean = true,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -53,7 +44,6 @@ data class SettingsUiState(
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val goalRepository: GoalRepository,
-    private val backupRepository: BackupRepository,
     private val authRepository: AuthRepository,
     private val sessionManager: SessionManager,
     private val foodDao: FoodDao,
@@ -63,9 +53,6 @@ class SettingsViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
-
-    val backupState: StateFlow<BackupState> = backupRepository.observeBackupState()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BackupState())
 
     private var resendJob: Job? = null
 
@@ -103,15 +90,8 @@ class SettingsViewModel @Inject constructor(
                     showAgeUpdatePrompt = showAgePrompt,
                 )
             }
-            backupRepository.scheduleBackup()
             foodDao.observeCustomFoodCount(userId).collect { count ->
                 _uiState.update { it.copy(customFoodCount = count) }
-            }
-        }
-
-        viewModelScope.launch {
-            backupState.collect { state ->
-                _uiState.update { it.copy(backupState = state) }
             }
         }
     }
@@ -144,25 +124,9 @@ class SettingsViewModel @Inject constructor(
 
     fun confirmLogout() {
         viewModelScope.launch {
-            analyticsTracker.track(
-                AnalyticsEvents.SIGN_OUT,
-                mapOf("pending_backup_count" to _uiState.value.backupState.pendingCount),
-            )
+            analyticsTracker.track(AnalyticsEvents.SIGN_OUT)
             authRepository.signOut()
             _uiState.update { it.copy(showLogoutDialog = false, logoutCompleted = true) }
-        }
-    }
-
-    fun backupThenLogout() {
-        dismissLogoutDialog()
-        triggerBackup()
-        viewModelScope.launch {
-            analyticsTracker.track(
-                AnalyticsEvents.SIGN_OUT,
-                mapOf("pending_backup_count" to _uiState.value.backupState.pendingCount),
-            )
-            authRepository.signOut()
-            _uiState.update { it.copy(logoutCompleted = true) }
         }
     }
 
@@ -217,47 +181,8 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun triggerBackup() {
-        viewModelScope.launch { backupRepository.triggerBackup(force = true) }
-    }
-
-    fun requestRestore() {
-        _uiState.update { it.copy(showRestoreStep1 = true) }
-    }
-
-    fun dismissRestoreDialogs() {
-        _uiState.update { it.copy(showRestoreStep1 = false, showRestoreStep2 = false) }
-    }
-
-    fun proceedRestoreStep2() {
-        _uiState.update { it.copy(showRestoreStep1 = false, showRestoreStep2 = true) }
-    }
-
-    fun confirmRestore() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isRestoring = true, showRestoreStep2 = false) }
-            val result = backupRepository.restoreFromCloud()
-            _uiState.update {
-                it.copy(
-                    isRestoring = false,
-                    restoreCompleted = result.success,
-                    messageKey = when {
-                        result.success -> "backup_restore_success"
-                        result.errorMessage == "offline" -> "backup_restore_offline"
-                        else -> "backup_restore_failed"
-                    },
-                )
-            }
-        }
-    }
-
-    fun backupBeforeRestore() {
-        dismissRestoreDialogs()
-        triggerBackup()
-    }
-
     fun clearMessage() {
-        _uiState.update { it.copy(messageKey = null, restoreCompleted = false) }
+        _uiState.update { it.copy(messageKey = null) }
     }
 
     fun consumeLogoutCompleted() {

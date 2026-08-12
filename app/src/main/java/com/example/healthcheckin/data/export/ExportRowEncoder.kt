@@ -1,10 +1,15 @@
 package com.example.healthcheckin.data.export
 
 import android.util.JsonWriter
+import com.example.healthcheckin.data.local.entity.BodyMeasurementEntity
 import com.example.healthcheckin.data.local.entity.DailyBudgetEntity
 import com.example.healthcheckin.data.local.entity.FoodEntity
 import com.example.healthcheckin.data.local.entity.GoalEntity
+import com.example.healthcheckin.data.local.entity.IngredientBindingEntity
+import com.example.healthcheckin.data.local.entity.InventoryItemEntity
+import com.example.healthcheckin.data.local.entity.InventoryLedgerEntity
 import com.example.healthcheckin.data.local.entity.MealEntryEntity
+import com.example.healthcheckin.data.local.entity.MilestoneEntity
 import com.example.healthcheckin.data.local.entity.ProfileEntity
 import com.example.healthcheckin.data.local.entity.WeightRecordEntity
 import com.example.healthcheckin.util.DateTimeUtil
@@ -281,6 +286,105 @@ object ExportRowEncoder {
         )
     }
 
+    fun writeBodyMeasurementsCsvHeader(writer: BufferedWriter) {
+        writer.write(
+            csvLine(
+                "id", "user_id", "metric", "local_date", "tz_offset_minutes", "value_cm",
+                "device_id", "created_at", "updated_at",
+            ),
+        )
+    }
+
+    fun writeBodyMeasurementCsvRow(writer: BufferedWriter, entity: BodyMeasurementEntity) {
+        writer.write(
+            csvLine(
+                entity.id, entity.userId, entity.metric, entity.localDate, entity.tzOffsetMinutes.toString(),
+                csvDouble(entity.valueCm), entity.deviceId, formatCsvTimestamp(entity.createdAt),
+                formatCsvTimestamp(entity.updatedAt),
+            ),
+        )
+    }
+
+    fun writeMilestonesCsvHeader(writer: BufferedWriter) {
+        writer.write(
+            csvLine(
+                "id", "user_id", "title", "target_weight_kg", "reward_text", "achieved_at",
+                "achieved_weight_kg", "days_elapsed", "shared_count", "device_id", "created_at", "updated_at",
+            ),
+        )
+    }
+
+    fun writeMilestoneCsvRow(writer: BufferedWriter, entity: MilestoneEntity) {
+        writer.write(
+            csvLine(
+                entity.id, entity.userId, entity.title, csvDouble(entity.targetWeightKg), entity.rewardText,
+                formatCsvTimestamp(entity.achievedAt), csvDouble(entity.achievedWeightKg),
+                csvInt(entity.daysElapsed), entity.sharedCount.toString(), entity.deviceId,
+                formatCsvTimestamp(entity.createdAt), formatCsvTimestamp(entity.updatedAt),
+            ),
+        )
+    }
+
+    fun writeInventoryItemsCsvHeader(writer: BufferedWriter) {
+        writer.write(
+            csvLine(
+                "id", "user_id", "name", "name_normalized", "ingredient_key", "category",
+                "initial_amount", "remaining_amount", "unit", "piece_grams", "purchase_date",
+                "expiry_date", "unit_price", "version", "entry_source", "raw_text", "device_id",
+                "created_at", "updated_at",
+            ),
+        )
+    }
+
+    fun writeInventoryItemCsvRow(writer: BufferedWriter, entity: InventoryItemEntity) {
+        writer.write(
+            csvLine(
+                entity.id, entity.userId, entity.name, entity.nameNormalized, entity.ingredientKey,
+                entity.category, csvDouble(entity.initialAmount), csvDouble(entity.remainingAmount), entity.unit,
+                csvDouble(entity.pieceGrams), entity.purchaseDate, entity.expiryDate, csvDouble(entity.unitPrice),
+                entity.version.toString(), entity.entrySource, entity.rawText, entity.deviceId,
+                formatCsvTimestamp(entity.createdAt), formatCsvTimestamp(entity.updatedAt),
+            ),
+        )
+    }
+
+    fun writeInventoryLedgerCsvHeader(writer: BufferedWriter) {
+        writer.write(
+            csvLine(
+                "id", "user_id", "inventory_item_id", "change_type", "delta_amount",
+                "balance_after", "ref_meal_entry_id", "note", "device_id", "created_at", "updated_at",
+            ),
+        )
+    }
+
+    fun writeInventoryLedgerCsvRow(writer: BufferedWriter, entity: InventoryLedgerEntity) {
+        writer.write(
+            csvLine(
+                entity.id, entity.userId, entity.inventoryItemId, entity.changeType,
+                csvDouble(entity.deltaAmount), csvDouble(entity.balanceAfter), entity.refMealEntryId,
+                entity.note, entity.deviceId, formatCsvTimestamp(entity.createdAt),
+                formatCsvTimestamp(entity.updatedAt),
+            ),
+        )
+    }
+
+    fun writeIngredientBindingsCsvHeader(writer: BufferedWriter) {
+        writer.write(
+            csvLine(
+                "id", "user_id", "food_id", "inventory_item_id", "device_id", "created_at", "updated_at",
+            ),
+        )
+    }
+
+    fun writeIngredientBindingCsvRow(writer: BufferedWriter, entity: IngredientBindingEntity) {
+        writer.write(
+            csvLine(
+                entity.id, entity.userId, entity.foodId, entity.inventoryItemId, entity.deviceId,
+                formatCsvTimestamp(entity.createdAt), formatCsvTimestamp(entity.updatedAt),
+            ),
+        )
+    }
+
     fun writeProfileJson(writer: JsonWriter, entity: ProfileEntity?) {
         if (entity == null) {
             writer.nullValue()
@@ -418,6 +522,89 @@ object ExportRowEncoder {
         writer.name("tz_offset_minutes").value(entity.tzOffsetMinutes)
         writer.name("weight_kg").value(entity.weightKg)
         writeNullableString(writer, "note", entity.note)
+        writer.name("device_id").value(entity.deviceId)
+        writeTimestamp(writer, "created_at", entity.createdAt)
+        writeTimestamp(writer, "updated_at", entity.updatedAt)
+        writer.endObject()
+    }
+
+    fun writeBodyMeasurementJson(writer: JsonWriter, entity: BodyMeasurementEntity) {
+        writer.beginObject()
+        writer.name("id").value(entity.id)
+        writer.name("user_id").value(entity.userId)
+        writer.name("metric").value(entity.metric)
+        writer.name("local_date").value(entity.localDate)
+        writer.name("tz_offset_minutes").value(entity.tzOffsetMinutes)
+        writer.name("value_cm").value(entity.valueCm)
+        writer.name("device_id").value(entity.deviceId)
+        writeTimestamp(writer, "created_at", entity.createdAt)
+        writeTimestamp(writer, "updated_at", entity.updatedAt)
+        writer.endObject()
+    }
+
+    fun writeMilestoneJson(writer: JsonWriter, entity: MilestoneEntity) {
+        writer.beginObject()
+        writer.name("id").value(entity.id)
+        writer.name("user_id").value(entity.userId)
+        writer.name("title").value(entity.title)
+        writer.name("target_weight_kg").value(entity.targetWeightKg)
+        writeNullableString(writer, "reward_text", entity.rewardText)
+        writeNullableTimestamp(writer, "achieved_at", entity.achievedAt)
+        writeNullableNumber(writer, "achieved_weight_kg", entity.achievedWeightKg)
+        writeNullableInt(writer, "days_elapsed", entity.daysElapsed)
+        writer.name("shared_count").value(entity.sharedCount)
+        writer.name("device_id").value(entity.deviceId)
+        writeTimestamp(writer, "created_at", entity.createdAt)
+        writeTimestamp(writer, "updated_at", entity.updatedAt)
+        writer.endObject()
+    }
+
+    fun writeInventoryItemJson(writer: JsonWriter, entity: InventoryItemEntity) {
+        writer.beginObject()
+        writer.name("id").value(entity.id)
+        writer.name("user_id").value(entity.userId)
+        writer.name("name").value(entity.name)
+        writer.name("name_normalized").value(entity.nameNormalized)
+        writeNullableString(writer, "ingredient_key", entity.ingredientKey)
+        writer.name("category").value(entity.category)
+        writer.name("initial_amount").value(entity.initialAmount)
+        writer.name("remaining_amount").value(entity.remainingAmount)
+        writer.name("unit").value(entity.unit)
+        writeNullableNumber(writer, "piece_grams", entity.pieceGrams)
+        writer.name("purchase_date").value(entity.purchaseDate)
+        writeNullableString(writer, "expiry_date", entity.expiryDate)
+        writeNullableNumber(writer, "unit_price", entity.unitPrice)
+        writer.name("version").value(entity.version)
+        writer.name("entry_source").value(entity.entrySource)
+        writeNullableString(writer, "raw_text", entity.rawText)
+        writer.name("device_id").value(entity.deviceId)
+        writeTimestamp(writer, "created_at", entity.createdAt)
+        writeTimestamp(writer, "updated_at", entity.updatedAt)
+        writer.endObject()
+    }
+
+    fun writeInventoryLedgerJson(writer: JsonWriter, entity: InventoryLedgerEntity) {
+        writer.beginObject()
+        writer.name("id").value(entity.id)
+        writer.name("user_id").value(entity.userId)
+        writer.name("inventory_item_id").value(entity.inventoryItemId)
+        writer.name("change_type").value(entity.changeType)
+        writer.name("delta_amount").value(entity.deltaAmount)
+        writer.name("balance_after").value(entity.balanceAfter)
+        writeNullableString(writer, "ref_meal_entry_id", entity.refMealEntryId)
+        writeNullableString(writer, "note", entity.note)
+        writer.name("device_id").value(entity.deviceId)
+        writeTimestamp(writer, "created_at", entity.createdAt)
+        writeTimestamp(writer, "updated_at", entity.updatedAt)
+        writer.endObject()
+    }
+
+    fun writeIngredientBindingJson(writer: JsonWriter, entity: IngredientBindingEntity) {
+        writer.beginObject()
+        writer.name("id").value(entity.id)
+        writer.name("user_id").value(entity.userId)
+        writer.name("food_id").value(entity.foodId)
+        writer.name("inventory_item_id").value(entity.inventoryItemId)
         writer.name("device_id").value(entity.deviceId)
         writeTimestamp(writer, "created_at", entity.createdAt)
         writeTimestamp(writer, "updated_at", entity.updatedAt)

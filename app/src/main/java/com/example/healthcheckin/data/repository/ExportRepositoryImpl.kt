@@ -5,16 +5,26 @@ import android.util.JsonWriter
 import com.example.healthcheckin.BuildConfig
 import com.example.healthcheckin.data.auth.SessionManager
 import com.example.healthcheckin.data.export.ExportRowEncoder
+import com.example.healthcheckin.data.local.dao.BodyMeasurementDao
 import com.example.healthcheckin.data.local.dao.DailyBudgetDao
 import com.example.healthcheckin.data.local.dao.FoodDao
 import com.example.healthcheckin.data.local.dao.GoalDao
+import com.example.healthcheckin.data.local.dao.IngredientBindingDao
+import com.example.healthcheckin.data.local.dao.InventoryItemDao
+import com.example.healthcheckin.data.local.dao.InventoryLedgerDao
 import com.example.healthcheckin.data.local.dao.MealEntryDao
+import com.example.healthcheckin.data.local.dao.MilestoneDao
 import com.example.healthcheckin.data.local.dao.ProfileDao
 import com.example.healthcheckin.data.local.dao.WeightRecordDao
+import com.example.healthcheckin.data.local.entity.BodyMeasurementEntity
 import com.example.healthcheckin.data.local.entity.DailyBudgetEntity
 import com.example.healthcheckin.data.local.entity.FoodEntity
 import com.example.healthcheckin.data.local.entity.GoalEntity
+import com.example.healthcheckin.data.local.entity.IngredientBindingEntity
+import com.example.healthcheckin.data.local.entity.InventoryItemEntity
+import com.example.healthcheckin.data.local.entity.InventoryLedgerEntity
 import com.example.healthcheckin.data.local.entity.MealEntryEntity
+import com.example.healthcheckin.data.local.entity.MilestoneEntity
 import com.example.healthcheckin.data.local.entity.WeightRecordEntity
 import com.example.healthcheckin.domain.model.ExportFormat
 import com.example.healthcheckin.domain.model.ExportProgress
@@ -54,6 +64,11 @@ class ExportRepositoryImpl @Inject constructor(
     private val foodDao: FoodDao,
     private val mealEntryDao: MealEntryDao,
     private val weightRecordDao: WeightRecordDao,
+    private val bodyMeasurementDao: BodyMeasurementDao,
+    private val milestoneDao: MilestoneDao,
+    private val inventoryItemDao: InventoryItemDao,
+    private val inventoryLedgerDao: InventoryLedgerDao,
+    private val ingredientBindingDao: IngredientBindingDao,
 ) : ExportRepository {
 
     private val progressFlow = MutableStateFlow(ExportProgress())
@@ -182,6 +197,11 @@ class ExportRepositoryImpl @Inject constructor(
             "foods" to foodDao.countActiveForUser(userId),
             "meal_entries" to mealEntryDao.countActiveForUser(userId),
             "weight_records" to weightRecordDao.countActiveForUser(userId),
+            "body_measurements" to bodyMeasurementDao.countActiveForUser(userId),
+            "milestones" to milestoneDao.countActiveForUser(userId),
+            "inventory_items" to inventoryItemDao.countActiveForUser(userId),
+            "inventory_ledger" to inventoryLedgerDao.countActiveForUser(userId),
+            "ingredient_bindings" to ingredientBindingDao.countActiveForUser(userId),
         )
     }
 
@@ -230,6 +250,21 @@ class ExportRepositoryImpl @Inject constructor(
         writeJsonArray(writer, ExportTable.WEIGHT_RECORDS) {
             paginateWeightRecords(userId) { ExportRowEncoder.writeWeightRecordJson(writer, it) }
         }
+        writeJsonArray(writer, ExportTable.BODY_MEASUREMENTS) {
+            paginateBodyMeasurements(userId) { ExportRowEncoder.writeBodyMeasurementJson(writer, it) }
+        }
+        writeJsonArray(writer, ExportTable.MILESTONES) {
+            paginateMilestones(userId) { ExportRowEncoder.writeMilestoneJson(writer, it) }
+        }
+        writeJsonArray(writer, ExportTable.INVENTORY_ITEMS) {
+            paginateInventoryItems(userId) { ExportRowEncoder.writeInventoryItemJson(writer, it) }
+        }
+        writeJsonArray(writer, ExportTable.INVENTORY_LEDGER) {
+            paginateInventoryLedger(userId) { ExportRowEncoder.writeInventoryLedgerJson(writer, it) }
+        }
+        writeJsonArray(writer, ExportTable.INGREDIENT_BINDINGS) {
+            paginateIngredientBindings(userId) { ExportRowEncoder.writeIngredientBindingJson(writer, it) }
+        }
 
         writer.endObject()
         writer.flush()
@@ -270,6 +305,21 @@ class ExportRepositoryImpl @Inject constructor(
         writePagedCsv(zipOut, ExportTable.WEIGHT_RECORDS, rowCounts["weight_records"] ?: 0) { writer ->
             paginateWeightRecords(userId) { ExportRowEncoder.writeWeightRecordCsvRow(writer, it) }
         }
+        writePagedCsv(zipOut, ExportTable.BODY_MEASUREMENTS, rowCounts["body_measurements"] ?: 0) { writer ->
+            paginateBodyMeasurements(userId) { ExportRowEncoder.writeBodyMeasurementCsvRow(writer, it) }
+        }
+        writePagedCsv(zipOut, ExportTable.MILESTONES, rowCounts["milestones"] ?: 0) { writer ->
+            paginateMilestones(userId) { ExportRowEncoder.writeMilestoneCsvRow(writer, it) }
+        }
+        writePagedCsv(zipOut, ExportTable.INVENTORY_ITEMS, rowCounts["inventory_items"] ?: 0) { writer ->
+            paginateInventoryItems(userId) { ExportRowEncoder.writeInventoryItemCsvRow(writer, it) }
+        }
+        writePagedCsv(zipOut, ExportTable.INVENTORY_LEDGER, rowCounts["inventory_ledger"] ?: 0) { writer ->
+            paginateInventoryLedger(userId) { ExportRowEncoder.writeInventoryLedgerCsvRow(writer, it) }
+        }
+        writePagedCsv(zipOut, ExportTable.INGREDIENT_BINDINGS, rowCounts["ingredient_bindings"] ?: 0) { writer ->
+            paginateIngredientBindings(userId) { ExportRowEncoder.writeIngredientBindingCsvRow(writer, it) }
+        }
     }
 
     private suspend fun writeProfileCsv(zipOut: ZipOutputStream, userId: String) {
@@ -299,6 +349,11 @@ class ExportRepositoryImpl @Inject constructor(
             ExportTable.FOODS -> ExportRowEncoder.writeFoodsCsvHeader(writer)
             ExportTable.MEAL_ENTRIES -> ExportRowEncoder.writeMealEntriesCsvHeader(writer)
             ExportTable.WEIGHT_RECORDS -> ExportRowEncoder.writeWeightRecordsCsvHeader(writer)
+            ExportTable.BODY_MEASUREMENTS -> ExportRowEncoder.writeBodyMeasurementsCsvHeader(writer)
+            ExportTable.MILESTONES -> ExportRowEncoder.writeMilestonesCsvHeader(writer)
+            ExportTable.INVENTORY_ITEMS -> ExportRowEncoder.writeInventoryItemsCsvHeader(writer)
+            ExportTable.INVENTORY_LEDGER -> ExportRowEncoder.writeInventoryLedgerCsvHeader(writer)
+            ExportTable.INGREDIENT_BINDINGS -> ExportRowEncoder.writeIngredientBindingsCsvHeader(writer)
             ExportTable.PROFILE -> Unit
         }
         if (total > 0) {
@@ -350,6 +405,36 @@ class ExportRepositoryImpl @Inject constructor(
         }, block)
     }
 
+    private suspend fun paginateBodyMeasurements(userId: String, block: suspend (BodyMeasurementEntity) -> Unit) {
+        forEachPage(bodyMeasurementDao.countActiveForUser(userId), { offset, limit ->
+            bodyMeasurementDao.getActivePageForUser(userId, limit, offset)
+        }, block)
+    }
+
+    private suspend fun paginateMilestones(userId: String, block: suspend (MilestoneEntity) -> Unit) {
+        forEachPage(milestoneDao.countActiveForUser(userId), { offset, limit ->
+            milestoneDao.getActivePageForUser(userId, limit, offset)
+        }, block)
+    }
+
+    private suspend fun paginateInventoryItems(userId: String, block: suspend (InventoryItemEntity) -> Unit) {
+        forEachPage(inventoryItemDao.countActiveForUser(userId), { offset, limit ->
+            inventoryItemDao.getActivePageForUser(userId, limit, offset)
+        }, block)
+    }
+
+    private suspend fun paginateInventoryLedger(userId: String, block: suspend (InventoryLedgerEntity) -> Unit) {
+        forEachPage(inventoryLedgerDao.countActiveForUser(userId), { offset, limit ->
+            inventoryLedgerDao.getActivePageForUser(userId, limit, offset)
+        }, block)
+    }
+
+    private suspend fun paginateIngredientBindings(userId: String, block: suspend (IngredientBindingEntity) -> Unit) {
+        forEachPage(ingredientBindingDao.countActiveForUser(userId), { offset, limit ->
+            ingredientBindingDao.getActivePageForUser(userId, limit, offset)
+        }, block)
+    }
+
     private suspend fun <T> forEachPage(
         total: Int,
         loadPage: suspend (offset: Int, limit: Int) -> List<T>,
@@ -387,6 +472,11 @@ class ExportRepositoryImpl @Inject constructor(
         ExportTable.FOODS -> "foods"
         ExportTable.MEAL_ENTRIES -> "meal_entries"
         ExportTable.WEIGHT_RECORDS -> "weight_records"
+        ExportTable.BODY_MEASUREMENTS -> "body_measurements"
+        ExportTable.MILESTONES -> "milestones"
+        ExportTable.INVENTORY_ITEMS -> "inventory_items"
+        ExportTable.INVENTORY_LEDGER -> "inventory_ledger"
+        ExportTable.INGREDIENT_BINDINGS -> "ingredient_bindings"
         ExportTable.PROFILE -> "profile"
     }
 

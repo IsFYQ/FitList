@@ -10,8 +10,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,15 +31,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.healthcheckin.BuildConfig
 import com.example.healthcheckin.R
 import com.example.healthcheckin.ui.theme.HealthCheckInDimens
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,7 +49,9 @@ fun SettingsScreen(
     onNavigateChangePassword: () -> Unit = {},
     onLogoutComplete: () -> Unit = {},
     onAccountDeleted: () -> Unit = {},
-    onRestoreComplete: () -> Unit = {},
+    onNavigateMilestones: () -> Unit = {},
+    onNavigateBindings: () -> Unit = {},
+    onNavigateBodyMeasurements: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -65,14 +61,11 @@ fun SettingsScreen(
     LaunchedEffect(uiState.messageKey) {
         uiState.messageKey?.let { key ->
             val resId = when (key) {
-                "backup_restore_success" -> R.string.backup_restore_success
-                "backup_restore_offline" -> R.string.backup_restore_offline
                 "delete_account_failed" -> R.string.delete_account_failed
                 "delete_account_wrong_password" -> R.string.delete_account_wrong_password
-                else -> R.string.backup_restore_failed
+                else -> R.string.delete_account_failed
             }
             Toast.makeText(context, context.getString(resId), Toast.LENGTH_SHORT).show()
-            if (uiState.restoreCompleted) onRestoreComplete()
             viewModel.clearMessage()
         }
     }
@@ -100,21 +93,8 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = viewModel::dismissLogoutDialog,
             title = { Text(stringResource(R.string.settings_logout)) },
-            text = {
-                Text(
-                    if (uiState.backupState.pendingCount > 0) {
-                        stringResource(R.string.logout_message_pending, uiState.backupState.pendingCount)
-                    } else {
-                        stringResource(R.string.logout_message)
-                    },
-                )
-            },
+            text = { Text(stringResource(R.string.logout_message)) },
             confirmButton = {
-                if (uiState.backupState.pendingCount > 0) {
-                    TextButton(onClick = viewModel::backupThenLogout) {
-                        Text(stringResource(R.string.logout_backup_first))
-                    }
-                }
                 TextButton(onClick = viewModel::confirmLogout) {
                     Text(stringResource(R.string.settings_logout))
                 }
@@ -169,60 +149,6 @@ fun SettingsScreen(
             dismissButton = {
                 TextButton(onClick = viewModel::dismissDeleteDialogs) {
                     Text(stringResource(R.string.common_cancel))
-                }
-            },
-        )
-    }
-
-    if (uiState.showRestoreStep1) {
-        AlertDialog(
-            onDismissRequest = viewModel::dismissRestoreDialogs,
-            title = { Text(stringResource(R.string.backup_restore_title)) },
-            text = {
-                Text(
-                    if (uiState.backupState.pendingCount > 0) {
-                        stringResource(R.string.backup_restore_message_pending, uiState.backupState.pendingCount)
-                    } else {
-                        stringResource(R.string.backup_restore_message)
-                    },
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (uiState.backupState.pendingCount > 0) {
-                            viewModel.proceedRestoreStep2()
-                        } else {
-                            viewModel.confirmRestore()
-                        }
-                    },
-                ) {
-                    Text(stringResource(R.string.backup_restore_continue))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::dismissRestoreDialogs) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
-        )
-    }
-
-    if (uiState.showRestoreStep2) {
-        AlertDialog(
-            onDismissRequest = viewModel::dismissRestoreDialogs,
-            title = { Text(stringResource(R.string.backup_restore_confirm_title)) },
-            text = {
-                Text(stringResource(R.string.backup_restore_confirm_message, uiState.backupState.pendingCount))
-            },
-            confirmButton = {
-                TextButton(onClick = viewModel::confirmRestore) {
-                    Text(stringResource(R.string.common_confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::backupBeforeRestore) {
-                    Text(stringResource(R.string.backup_restore_backup_first))
                 }
             },
         )
@@ -320,6 +246,24 @@ fun SettingsScreen(
                     modifier = Modifier.clickable(onClick = onEditGoal),
                 )
             }
+            item {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.milestone_title)) },
+                    modifier = Modifier.clickable(onClick = onNavigateMilestones),
+                )
+            }
+            item {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.body_title)) },
+                    modifier = Modifier.clickable(onClick = onNavigateBodyMeasurements),
+                )
+            }
+            item {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.binding_title)) },
+                    modifier = Modifier.clickable(onClick = onNavigateBindings),
+                )
+            }
 
             item { SettingsSectionHeader(stringResource(R.string.settings_section_data)) }
             item {
@@ -332,56 +276,10 @@ fun SettingsScreen(
                 )
             }
             item {
-                val backup = uiState.backupState
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.settings_backup)) },
-                    supportingContent = {
-                        Text(
-                            when {
-                                backup.isRunning && backup.progressTotal > 0 ->
-                                    stringResource(R.string.backup_in_progress, backup.progressDone, backup.progressTotal)
-                                backup.pendingCount == 0 -> stringResource(R.string.backup_all_synced)
-                                else -> stringResource(R.string.settings_backup_pending, backup.pendingCount)
-                            },
-                        )
-                        backup.lastBackupAt?.let { at ->
-                            Text(stringResource(R.string.backup_last_at, formatRelativeTime(at)))
-                        } ?: Text(stringResource(R.string.backup_never))
-                    },
-                )
-            }
-            item {
-                Button(
-                    onClick = viewModel::triggerBackup,
-                    enabled = !uiState.backupState.isRunning,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                ) {
-                    if (uiState.backupState.isRunning) {
-                        CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
-                    }
-                    Text(stringResource(R.string.backup_now))
-                }
-            }
-            item {
-                TextButton(
-                    onClick = viewModel::requestRestore,
-                    enabled = !uiState.isRestoring,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                ) {
-                    Text(stringResource(R.string.backup_restore_action))
-                }
-            }
-            item {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.settings_export)) },
                     supportingContent = { Text(stringResource(R.string.settings_export_subtitle)) },
                     modifier = Modifier.clickable(onClick = onExportData),
-                )
-            }
-            item {
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.settings_diagnostics)) },
-                    modifier = Modifier.clickable(onClick = onNavigateDiagnostics),
                 )
             }
 
@@ -432,15 +330,5 @@ fun SettingsScreen(
                 )
             }
         }
-    }
-}
-
-private fun formatRelativeTime(epochMillis: Long): String {
-    val diff = System.currentTimeMillis() - epochMillis
-    return when {
-        diff < 60_000 -> "刚刚"
-        diff < 3_600_000 -> "${diff / 60_000} 分钟前"
-        diff < 86_400_000 -> "${diff / 3_600_000} 小时前"
-        else -> SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()).format(Date(epochMillis))
     }
 }

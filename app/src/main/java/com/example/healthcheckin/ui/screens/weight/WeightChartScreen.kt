@@ -63,7 +63,9 @@ import com.example.healthcheckin.util.PrecisionUtil
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeightChartScreen(
-    onBack: () -> Unit,
+    onBack: (() -> Unit)? = null,
+    onNavigateMilestones: (() -> Unit)? = null,
+    embeddedInTabs: Boolean = false,
     viewModel: WeightChartViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -79,6 +81,12 @@ fun WeightChartScreen(
             viewModel.clearError()
         }
     }
+
+    com.example.healthcheckin.ui.screens.milestone.AchievementQueueHost(
+        queue = uiState.achievementQueue,
+        onDismiss = viewModel::dismissAchievement,
+        onShare = { },
+    )
 
     uiState.overwritePrompt?.let { prompt ->
         AlertDialog(
@@ -163,8 +171,20 @@ fun WeightChartScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.weight_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    if (onBack != null && !embeddedInTabs) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        }
+                    }
+                },
+                actions = {
+                    if (onNavigateMilestones != null) {
+                        IconButton(onClick = onNavigateMilestones) {
+                            Icon(
+                                imageVector = Icons.Outlined.MonitorWeight,
+                                contentDescription = stringResource(R.string.milestone_title),
+                            )
+                        }
                     }
                 },
             )
@@ -290,7 +310,7 @@ private fun WeightStatusCard(
                 }
                 record.deltaKg?.let { delta ->
                     val positive = delta > 0
-                    val sign = if (positive) "↑" else "↓"
+                    val sign = if (positive) "?" else "?"
                     Text(
                         text = "$sign${PrecisionUtil.roundWeightDisplay(kotlin.math.abs(delta))} kg",
                         color = weightDeltaColor(null, positive),
@@ -470,7 +490,7 @@ private fun WeightHistoryRow(
                 )
                 record.deltaKg?.let { delta ->
                     val positive = delta > 0
-                    val sign = if (positive) "↑" else "↓"
+                    val sign = if (positive) "?" else "?"
                     Text(
                         text = "$sign${PrecisionUtil.roundWeightDisplay(kotlin.math.abs(delta))}",
                         style = MaterialTheme.typography.labelSmall,

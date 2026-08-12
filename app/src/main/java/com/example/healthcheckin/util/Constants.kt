@@ -66,3 +66,76 @@ enum class FoodSource { CUSTOM, PUBLIC, FATSECRET, OFF }
 enum class MealEntrySource { SEARCH, RECENT, CUSTOM, RECOMMEND, OCR }
 
 enum class CalorieState { NORMAL, WARN, OVER }
+
+enum class BodyMetric(val labelZh: String) {
+    WAIST("\u8170\u56F4"),
+    HIP("\u81C0\u56F4"),
+    THIGH("\u5927\u817F\u56F4"),
+    UPPER_ARM("\u4E0A\u81C2\u56F4"),
+    CHEST("\u80F8\u56F4"),
+}
+
+enum class InventoryCategory(val labelZh: String) {
+    VEGETABLE("\u852C\u83DC"),
+    MEAT("\u8089\u7C7B"),
+    STAPLE("\u4E3B\u98DF"),
+    DAIRY("\u4E73\u5236\u54C1"),
+    SEASONING("\u8C03\u5473\u54C1"),
+    OTHER("\u5176\u4ED6"),
+}
+
+enum class InventoryUnit(val labelZh: String) {
+    G("g"),
+    KG("kg"),
+    ML("ml"),
+    L("L"),
+    PIECE("\u4E2A"),
+}
+
+enum class InventoryExpiryStatus {
+    NORMAL,
+    NEAR_EXPIRY,
+    EXPIRED,
+}
+
+enum class InventoryChangeType {
+    CREATE,
+    MEAL_DEDUCT,
+    MEAL_REVERT,
+    MANUAL_ADJUST,
+    DISCARD,
+}
+
+enum class InventorySortMode {
+    BY_CATEGORY,
+    BY_EXPIRY,
+    BY_RECENT,
+}
+
+enum class InventoryMatchLevel {
+    L1,
+    L2,
+    L3,
+    NONE,
+}
+
+enum class InventoryDeductResolution {
+    DEDUCT_REMAINING,
+    MANUAL,
+    SKIP,
+}
+
+object P1ValidationConstants {
+    const val BODY_METRIC_MIN_CM = 20.0
+    const val BODY_METRIC_MAX_CM = 200.0
+    const val BODY_METRIC_DIFF_CONFIRM_CM = 10.0
+    const val MILESTONE_TITLE_MAX = 30
+    const val MILESTONE_REWARD_MAX = 100
+    const val MILESTONE_ACTIVE_MAX = 10
+    const val INVENTORY_NAME_MAX = 50
+    const val INVENTORY_AMOUNT_MAX = 100_000.0
+    const val INVENTORY_PIECE_GRAMS_MAX = 10_000.0
+    const val INVENTORY_PRICE_MAX = 100_000.0
+    const val INVENTORY_PURCHASE_MAX_DAYS_BACK = 365
+    const val NEAR_EXPIRY_DAYS = 3
+}
