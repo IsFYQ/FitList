@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -64,6 +65,7 @@ import com.example.healthcheckin.util.PrecisionUtil
 fun InventoryListScreen(
     onAdd: () -> Unit,
     onEdit: (String) -> Unit,
+    onScanReceipt: () -> Unit = {},
     viewModel: InventoryListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -88,7 +90,19 @@ fun InventoryListScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.inventory_title)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.inventory_title)) },
+                actions = {
+                    IconButton(onClick = onScanReceipt) {
+                        Icon(
+                            Icons.Default.DocumentScanner,
+                            contentDescription = stringResource(R.string.inventory_scan_receipt),
+                        )
+                    }
+                },
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onAdd) { Icon(Icons.Default.Add, contentDescription = null) }
         },

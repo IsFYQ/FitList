@@ -10,4 +10,10 @@ interface MealRepository {
     suspend fun deleteMeal(entryId: String): Result<Unit>
     suspend fun getMealById(entryId: String): MealEntryEntity?
     suspend fun undoDelete(entryId: String): Result<Unit>
+    suspend fun addMealsBatch(
+        userId: String,
+        items: List<com.example.healthcheckin.domain.model.RecommendationMealBatchItem>,
+        consumedAt: Long,
+        mealSlot: com.example.healthcheckin.util.MealSlot,
+    ): Result<List<String>>
 }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -63,6 +64,7 @@ fun DashboardScreen(
     onNavigateMealEdit: (entryId: String) -> Unit,
     onNavigateWeight: () -> Unit,
     onNavigateBodyMeasurements: () -> Unit = {},
+    onNavigateRecommendation: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -230,6 +232,15 @@ fun DashboardScreen(
                                 macros = data?.macros.orEmpty(),
                                 modifier = Modifier.padding(bottom = HealthCheckInDimens.SectionGap),
                             )
+
+                            Button(
+                                onClick = onNavigateRecommendation,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = HealthCheckInDimens.SectionGap),
+                            ) {
+                                Text(stringResource(R.string.dashboard_recommend_meal))
+                            }
 
                             WeightCard(
                                 data = data?.weightCard ?: com.example.healthcheckin.domain.model.WeightCardData(

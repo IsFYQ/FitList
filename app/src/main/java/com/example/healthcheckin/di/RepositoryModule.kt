@@ -11,6 +11,8 @@ import com.example.healthcheckin.data.repository.MealRepositoryImpl
 import com.example.healthcheckin.data.repository.MilestoneRepositoryImpl
 import com.example.healthcheckin.data.repository.InventoryRepositoryImpl
 import com.example.healthcheckin.data.repository.IngredientBindingRepositoryImpl
+import com.example.healthcheckin.data.repository.ExerciseRepositoryImpl
+import com.example.healthcheckin.data.repository.RecommendationRepositoryImpl
 import com.example.healthcheckin.data.repository.WeightRepositoryImpl
 import com.example.healthcheckin.domain.repository.AuthRepository
 import com.example.healthcheckin.domain.repository.BackupRepository
@@ -69,4 +71,6 @@ abstract class RepositoryModule {
     @Binds @Singleton abstract fun bindMilestoneRepository(impl: MilestoneRepositoryImpl): MilestoneRepository
     @Binds @Singleton abstract fun bindInventoryRepository(impl: InventoryRepositoryImpl): InventoryRepository
     @Binds @Singleton abstract fun bindIngredientBindingRepository(impl: IngredientBindingRepositoryImpl): IngredientBindingRepository
+    @Binds @Singleton abstract fun bindRecommendationRepository(impl: RecommendationRepositoryImpl): com.example.healthcheckin.domain.repository.RecommendationRepository
+    @Binds @Singleton abstract fun bindExerciseRepository(impl: ExerciseRepositoryImpl): com.example.healthcheckin.domain.repository.ExerciseRepository
 }

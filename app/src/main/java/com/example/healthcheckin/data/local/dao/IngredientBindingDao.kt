@@ -28,6 +28,15 @@ interface IngredientBindingDao {
     @Query(
         """
         SELECT * FROM ingredient_bindings
+        WHERE userId = :userId AND inventoryItemId = :inventoryItemId AND deletedAt IS NULL
+        LIMIT 1
+        """,
+    )
+    suspend fun findByInventoryItem(userId: String, inventoryItemId: String): IngredientBindingEntity?
+
+    @Query(
+        """
+        SELECT * FROM ingredient_bindings
         WHERE userId = :userId AND deletedAt IS NULL
         ORDER BY updatedAt DESC
         """,

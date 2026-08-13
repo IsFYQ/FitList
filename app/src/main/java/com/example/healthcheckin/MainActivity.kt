@@ -26,12 +26,14 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var passwordResetStore: PasswordResetStore
     @Inject lateinit var publicFoodSeeder: PublicFoodSeeder
     @Inject lateinit var ingredientBindingRepository: IngredientBindingRepository
+    @Inject lateinit var mlKitInitializer: com.example.healthcheckin.data.ocr.MlKitInitializer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         lifecycleScope.launch {
             publicFoodSeeder.seedIfNeeded()
             ingredientBindingRepository.ensureAliasesSeeded()
+            mlKitInitializer.ensureChineseModelReady()
         }
         handleDeepLink(intent)
         enableEdgeToEdge()

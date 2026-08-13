@@ -20,6 +20,10 @@ class HealthCheckInApp : Application(), Configuration.Provider {
         analyticsLifecycleObserver.register()
     }
 
+    fun prepareMlKit() {
+        // Called from MainActivity after Hilt injection
+    }
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)

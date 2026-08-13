@@ -125,6 +125,26 @@ enum class InventoryDeductResolution {
     SKIP,
 }
 
+enum class ExerciseType(val labelZh: String, val defaultMet: Double) {
+    RUNNING("跑步", 8.0),
+    BRISK_WALKING("快走", 4.3),
+    CYCLING("骑行", 6.8),
+    SWIMMING("游泳", 7.0),
+    STRENGTH("力量训练", 5.0),
+    YOGA("瑜伽", 2.5),
+    CUSTOM("自定义", 4.0),
+}
+
+object P2ValidationConstants {
+    const val EXERCISE_DURATION_MIN = 1
+    const val EXERCISE_DURATION_MAX = 600
+    const val EXERCISE_MET_MIN = 1.0
+    const val EXERCISE_MET_MAX = 20.0
+    const val EXERCISE_CUSTOM_NAME_MAX = 20
+    const val RECOMMEND_SWAP_MAX = 5
+    const val RECOMMEND_GAP_MIN_KCAL = 100
+}
+
 object P1ValidationConstants {
     const val BODY_METRIC_MIN_CM = 20.0
     const val BODY_METRIC_MAX_CM = 200.0

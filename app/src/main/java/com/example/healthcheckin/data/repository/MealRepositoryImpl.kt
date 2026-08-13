@@ -234,6 +234,32 @@ class MealRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun addMealsBatch(
+        userId: String,
+        items: List<com.example.healthcheckin.domain.model.RecommendationMealBatchItem>,
+        consumedAt: Long,
+        mealSlot: com.example.healthcheckin.util.MealSlot,
+    ): Result<List<String>> = runCatching {
+        items.map { batchItem ->
+            addMeal(
+                userId,
+                AddMealRequest(
+                    food = batchItem.food,
+                    quantity = batchItem.quantity,
+                    unit = batchItem.unit,
+                    servingGrams = batchItem.servingGrams,
+                    consumedAt = consumedAt,
+                    mealSlot = mealSlot,
+                    entrySource = com.example.healthcheckin.util.MealEntrySource.RECOMMEND,
+                    inventoryItemId = batchItem.inventoryItemId,
+                    deductChoice = com.example.healthcheckin.domain.model.InventoryDeductChoice(
+                        com.example.healthcheckin.util.InventoryDeductResolution.DEDUCT_REMAINING,
+                    ),
+                ),
+            ).getOrThrow().id
+        }
+    }
+
     private suspend fun resolveFood(
         userId: String,
         item: FoodSearchItem,

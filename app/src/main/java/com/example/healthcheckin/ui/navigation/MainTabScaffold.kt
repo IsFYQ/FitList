@@ -2,6 +2,7 @@ package com.example.healthcheckin.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.DirectionsRun
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Kitchen
 import androidx.compose.material.icons.outlined.MonitorWeight
@@ -23,6 +24,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.healthcheckin.R
 import com.example.healthcheckin.ui.screens.dashboard.DashboardScreen
+import com.example.healthcheckin.ui.screens.exercise.ExerciseScreen
 import com.example.healthcheckin.ui.screens.inventory.InventoryListScreen
 import com.example.healthcheckin.ui.screens.weight.WeightChartScreen
 
@@ -35,6 +37,8 @@ fun MainTabScaffold(
     onNavigateBodyMeasurements: () -> Unit,
     onNavigateMilestones: () -> Unit,
     onNavigateInventoryForm: (String?) -> Unit,
+    onNavigateRecommendation: () -> Unit,
+    onNavigateReceiptScan: () -> Unit,
 ) {
     val tabNavController = rememberNavController()
     val backStackEntry by tabNavController.currentBackStackEntryAsState()
@@ -61,6 +65,12 @@ fun MainTabScaffold(
                     icon = { Icon(Icons.Outlined.MonitorWeight, contentDescription = null) },
                     label = { Text(stringResource(R.string.tab_weight)) },
                 )
+                NavigationBarItem(
+                    selected = currentDestination?.hasRoute<ExerciseRoute>() == true,
+                    onClick = { tabNavController.navigateToTab(ExerciseRoute) },
+                    icon = { Icon(Icons.Outlined.DirectionsRun, contentDescription = null) },
+                    label = { Text(stringResource(R.string.tab_exercise)) },
+                )
             }
         },
     ) { padding ->
@@ -77,12 +87,14 @@ fun MainTabScaffold(
                     onNavigateMealEdit = onNavigateMealEdit,
                     onNavigateWeight = { tabNavController.navigateToTab(WeightChartRoute) },
                     onNavigateBodyMeasurements = onNavigateBodyMeasurements,
+                    onNavigateRecommendation = onNavigateRecommendation,
                 )
             }
             composable<InventoryRoute> {
                 InventoryListScreen(
                     onAdd = { onNavigateInventoryForm(null) },
                     onEdit = { onNavigateInventoryForm(it) },
+                    onScanReceipt = onNavigateReceiptScan,
                 )
             }
             composable<WeightChartRoute> {
@@ -91,6 +103,9 @@ fun MainTabScaffold(
                     onNavigateMilestones = onNavigateMilestones,
                     embeddedInTabs = true,
                 )
+            }
+            composable<ExerciseRoute> {
+                ExerciseScreen(embeddedInTabs = true)
             }
         }
     }

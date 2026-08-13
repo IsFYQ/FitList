@@ -78,3 +78,12 @@ data class InventoryFormRoute(val itemId: String? = null)
 
 @Serializable
 object IngredientBindingsRoute
+
+@Serializable
+object ReceiptScanRoute
+
+@Serializable
+object RecommendationRoute
+
+@Serializable
+object ExerciseRoute

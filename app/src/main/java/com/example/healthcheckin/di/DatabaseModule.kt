@@ -43,4 +43,5 @@ object DatabaseModule {
     @Provides fun provideInventoryLedgerDao(db: HealthDatabase) = db.inventoryLedgerDao()
     @Provides fun provideIngredientAliasDao(db: HealthDatabase) = db.ingredientAliasDao()
     @Provides fun provideIngredientBindingDao(db: HealthDatabase) = db.ingredientBindingDao()
+    @Provides fun provideExerciseRecordDao(db: HealthDatabase) = db.exerciseRecordDao()
 }

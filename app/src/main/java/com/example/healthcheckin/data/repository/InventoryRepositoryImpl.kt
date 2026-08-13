@@ -18,6 +18,7 @@ import com.example.healthcheckin.domain.model.InventoryItem
 import com.example.healthcheckin.domain.model.InventoryMatchResult
 import com.example.healthcheckin.domain.model.SaveInventoryRequest
 import com.example.healthcheckin.domain.model.UpdateInventoryRequest
+import com.example.healthcheckin.domain.model.OcrImportLineRequest
 import com.example.healthcheckin.domain.repository.InventoryRepository
 import com.example.healthcheckin.util.BasisUnit
 import com.example.healthcheckin.util.DateTimeUtil
@@ -53,7 +54,8 @@ class InventoryRepositoryImpl @Inject constructor(
         val entity = InventoryItemEntity(UuidV7.generate(), userId, request.name.trim(), Validators.normalizeFoodName(request.name),
             aliasDao.findByAlias(Validators.normalizeFoodName(request.name))?.ingredientKey, request.category.name,
             PrecisionUtil.roundStorage(request.amount), PrecisionUtil.roundStorage(request.amount), request.unit.name, request.pieceGrams,
-            request.purchaseDate, request.expiryDate, request.unitPrice, deviceId = deviceId, createdAt = now, updatedAt = now, syncState = SyncState.PENDING)
+            request.purchaseDate, request.expiryDate, request.unitPrice, entrySource = request.entrySource, rawText = request.rawText,
+            deviceId = deviceId, createdAt = now, updatedAt = now, syncState = SyncState.PENDING)
         database.withTransaction {
             itemDao.insert(entity); ledger(entity, InventoryChangeType.CREATE, entity.remainingAmount, null, now)
             enqueue("inventory_items", entity.id, now)
@@ -144,6 +146,69 @@ class InventoryRepositoryImpl @Inject constructor(
         val updated = item.copy(remainingAmount = PrecisionUtil.roundStorage(item.remainingAmount + amount), version = item.version + 1, updatedAt = now, syncState = SyncState.PENDING)
         database.withTransaction { itemDao.update(updated); ledger(updated, InventoryChangeType.MEAL_REVERT, amount, mealEntryId, now); enqueue("inventory_items", itemId, now) }
     }
+
+    override suspend fun findByNameOnDate(
+        userId: String,
+        nameNormalized: String,
+        purchaseDate: String,
+    ): InventoryItem? = itemDao.findByNameAndPurchaseDate(userId, nameNormalized, purchaseDate)?.toItem()
+
+    override suspend fun importOcrBatch(
+        userId: String,
+        purchaseDate: String,
+        lines: List<OcrImportLineRequest>,
+    ): Result<List<String>> = runCatching {
+        val importedIds = mutableListOf<String>()
+        database.withTransaction {
+            lines.forEach { line ->
+                val normalized = Validators.normalizeFoodName(line.name)
+                val now = DateTimeUtil.nowEpochMillis()
+                if (line.mergeExistingId != null) {
+                    val existing = itemDao.getById(line.mergeExistingId) ?: error("Inventory item not found")
+                    val mergedAmount = PrecisionUtil.roundStorage(existing.remainingAmount + line.quantity)
+                    val updated = existing.copy(
+                        remainingAmount = mergedAmount,
+                        initialAmount = PrecisionUtil.roundStorage(existing.initialAmount + line.quantity),
+                        version = existing.version + 1,
+                        updatedAt = now,
+                        syncState = SyncState.PENDING,
+                    )
+                    itemDao.update(updated)
+                    ledger(updated, InventoryChangeType.MANUAL_ADJUST, line.quantity, null, now)
+                    enqueue("inventory_items", updated.id, now)
+                    importedIds.add(updated.id)
+                } else {
+                    val entity = InventoryItemEntity(
+                        id = UuidV7.generate(),
+                        userId = userId,
+                        name = line.name.trim(),
+                        nameNormalized = normalized,
+                        ingredientKey = aliasDao.findByAlias(normalized)?.ingredientKey,
+                        category = line.category.name,
+                        initialAmount = PrecisionUtil.roundStorage(line.quantity),
+                        remainingAmount = PrecisionUtil.roundStorage(line.quantity),
+                        unit = line.unit.name,
+                        pieceGrams = if (line.unit == InventoryUnit.PIECE) 100.0 else null,
+                        purchaseDate = purchaseDate,
+                        expiryDate = null,
+                        unitPrice = line.unitPrice,
+                        entrySource = "OCR",
+                        rawText = line.rawText,
+                        deviceId = deviceId,
+                        createdAt = now,
+                        updatedAt = now,
+                        syncState = SyncState.PENDING,
+                    )
+                    itemDao.insert(entity)
+                    ledger(entity, InventoryChangeType.CREATE, entity.remainingAmount, null, now)
+                    enqueue("inventory_items", entity.id, now)
+                    importedIds.add(entity.id)
+                }
+            }
+        }
+        importedIds
+    }
+
     private fun match(level: InventoryMatchLevel, item: InventoryItemEntity) = InventoryMatchResult(
         level,
         when (level) {

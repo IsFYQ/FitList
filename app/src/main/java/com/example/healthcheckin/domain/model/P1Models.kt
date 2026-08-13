@@ -95,6 +95,8 @@ data class SaveInventoryRequest(
     val expiryDate: String?,
     val unitPrice: Double?,
     val boundFoodId: String? = null,
+    val entrySource: String = "MANUAL",
+    val rawText: String? = null,
 )
 
 data class UpdateInventoryRequest(

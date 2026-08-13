@@ -3,11 +3,12 @@ package com.example.healthcheckin.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.healthcheckin.data.local.dao.DailyBudgetDao
 import com.example.healthcheckin.data.local.dao.AnalyticsEventDao
 import com.example.healthcheckin.data.local.dao.AppSettingDao
 import com.example.healthcheckin.data.local.dao.BackupStateDao
 import com.example.healthcheckin.data.local.dao.BodyMeasurementDao
-import com.example.healthcheckin.data.local.dao.DailyBudgetDao
+import com.example.healthcheckin.data.local.dao.ExerciseRecordDao
 import com.example.healthcheckin.data.local.dao.FoodDao
 import com.example.healthcheckin.data.local.dao.FoodSearchCacheDao
 import com.example.healthcheckin.data.local.dao.GoalDao
@@ -22,11 +23,12 @@ import com.example.healthcheckin.data.local.dao.PublicFoodDao
 import com.example.healthcheckin.data.local.dao.SyncQueueDao
 import com.example.healthcheckin.data.local.dao.SyncStatusDao
 import com.example.healthcheckin.data.local.dao.WeightRecordDao
+import com.example.healthcheckin.data.local.entity.DailyBudgetEntity
 import com.example.healthcheckin.data.local.entity.AnalyticsEventEntity
 import com.example.healthcheckin.data.local.entity.AppSettingEntity
 import com.example.healthcheckin.data.local.entity.BackupStateEntity
 import com.example.healthcheckin.data.local.entity.BodyMeasurementEntity
-import com.example.healthcheckin.data.local.entity.DailyBudgetEntity
+import com.example.healthcheckin.data.local.entity.ExerciseRecordEntity
 import com.example.healthcheckin.data.local.entity.FoodEntity
 import com.example.healthcheckin.data.local.entity.FoodSearchCacheEntity
 import com.example.healthcheckin.data.local.entity.GoalEntity
@@ -61,8 +63,9 @@ import com.example.healthcheckin.data.local.entity.WeightRecordEntity
         InventoryLedgerEntity::class,
         IngredientAliasEntity::class,
         IngredientBindingEntity::class,
+        ExerciseRecordEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -86,4 +89,5 @@ abstract class HealthDatabase : RoomDatabase() {
     abstract fun inventoryLedgerDao(): InventoryLedgerDao
     abstract fun ingredientAliasDao(): IngredientAliasDao
     abstract fun ingredientBindingDao(): IngredientBindingDao
+    abstract fun exerciseRecordDao(): ExerciseRecordDao
 }

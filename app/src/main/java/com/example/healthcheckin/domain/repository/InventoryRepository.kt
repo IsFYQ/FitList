@@ -6,6 +6,7 @@ import com.example.healthcheckin.domain.model.InventoryItem
 import com.example.healthcheckin.domain.model.InventoryMatchResult
 import com.example.healthcheckin.domain.model.SaveInventoryRequest
 import com.example.healthcheckin.domain.model.UpdateInventoryRequest
+import com.example.healthcheckin.domain.model.OcrImportLineRequest
 import com.example.healthcheckin.util.BasisUnit
 import kotlinx.coroutines.flow.Flow
 
@@ -38,4 +39,6 @@ interface InventoryRepository {
         choice: InventoryDeductChoice,
     ): Result<Double>
     suspend fun revertDeduct(userId: String, mealEntryId: String, itemId: String, amount: Double): Result<Unit>
+    suspend fun findByNameOnDate(userId: String, nameNormalized: String, purchaseDate: String): InventoryItem?
+    suspend fun importOcrBatch(userId: String, purchaseDate: String, lines: List<OcrImportLineRequest>): Result<List<String>>
 }

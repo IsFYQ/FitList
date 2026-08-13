@@ -54,6 +54,7 @@ fun MealEditScreen(
         when (uiState.errorMessage) {
             "save_failed" -> Toast.makeText(context, context.getString(R.string.meal_save_failed), Toast.LENGTH_SHORT).show()
             "delete_failed" -> Toast.makeText(context, context.getString(R.string.meal_delete_failed), Toast.LENGTH_SHORT).show()
+            "load_failed" -> Toast.makeText(context, context.getString(R.string.meal_entry_not_found), Toast.LENGTH_SHORT).show()
         }
         if (uiState.errorMessage != null) viewModel.clearError()
     }
@@ -79,7 +80,7 @@ fun MealEditScreen(
                     CircularProgressIndicator()
                 }
             }
-            uiState.confirmState != null -> {
+            uiState.confirmState != null && uiState.minDate.isNotBlank() -> {
                 Box(modifier = Modifier.fillMaxSize().padding(padding)) {
                     MealConfirmSheet(
                         state = uiState.confirmState!!,

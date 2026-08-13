@@ -103,4 +103,18 @@ interface InventoryItemDao {
         """,
     )
     suspend fun getActivePageForUser(userId: String, limit: Int, offset: Int): List<InventoryItemEntity>
+
+    @Query(
+        """
+        SELECT * FROM inventory_items
+        WHERE userId = :userId AND nameNormalized = :nameNormalized
+          AND purchaseDate = :purchaseDate AND deletedAt IS NULL
+        LIMIT 1
+        """,
+    )
+    suspend fun findByNameAndPurchaseDate(
+        userId: String,
+        nameNormalized: String,
+        purchaseDate: String,
+    ): InventoryItemEntity?
 }

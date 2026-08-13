@@ -31,6 +31,8 @@ import com.example.healthcheckin.ui.screens.settings.ChangePasswordScreen
 import com.example.healthcheckin.ui.screens.settings.DiagnosticsScreen
 import com.example.healthcheckin.ui.screens.settings.SettingsScreen
 import com.example.healthcheckin.ui.screens.weight.WeightChartScreen
+import com.example.healthcheckin.ui.screens.ocr.ReceiptScanScreen
+import com.example.healthcheckin.ui.screens.recommendation.RecommendationScreen
 import com.example.healthcheckin.ui.screens.splash.SplashDestination
 import com.example.healthcheckin.ui.screens.splash.SplashScreen
 import com.example.healthcheckin.ui.screens.splash.SplashViewModel
@@ -175,6 +177,27 @@ fun HealthCheckInNavHost(
                     onNavigateInventoryForm = { itemId ->
                         navController.navigate(InventoryFormRoute(itemId = itemId))
                     },
+                    onNavigateRecommendation = { navController.navigate(RecommendationRoute) },
+                    onNavigateReceiptScan = { navController.navigate(ReceiptScanRoute) },
+                )
+            }
+
+            composable<ReceiptScanRoute> {
+                ReceiptScanScreen(
+                    onBack = { navController.popBackStack() },
+                    onImportSuccess = {
+                        navController.popBackStack()
+                    },
+                )
+            }
+
+            composable<RecommendationRoute> {
+                RecommendationScreen(
+                    onBack = { navController.popBackStack() },
+                    onNavigateInventory = {
+                        navController.popBackStack()
+                    },
+                    onNavigateBindings = { navController.navigate(IngredientBindingsRoute) },
                 )
             }
 

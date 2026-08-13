@@ -59,23 +59,30 @@ class MealEditViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val userId = sessionManager.getUserId() ?: return@launch
-            val profile = profileDao.getById(userId)
-            val minDate = dashboardRepository.getMinViewDate(
-                profile?.registeredLocalDate ?: DateTimeUtil.todayLocalDateString(),
-            )
-            val entry = mealRepository.getMealById(entryId)
-            if (entry == null || entry.userId != userId) {
-                _uiState.update { it.copy(isLoading = false, notFound = true, minDate = minDate) }
-                return@launch
-            }
-            entryEntity = entry
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    minDate = minDate,
-                    confirmState = entry.toConfirmState(),
+            try {
+                val userId = sessionManager.getUserId() ?: return@launch
+                val profile = profileDao.getById(userId)
+                val minDate = dashboardRepository.getMinViewDate(
+                    profile?.registeredLocalDate ?: DateTimeUtil.todayLocalDateString(),
                 )
+                // minDate must be on state before toConfirmState() → validateConfirm()
+                _uiState.update { it.copy(minDate = minDate) }
+                val entry = mealRepository.getMealById(entryId)
+                if (entry == null || entry.userId != userId) {
+                    _uiState.update { it.copy(isLoading = false, notFound = true) }
+                    return@launch
+                }
+                entryEntity = entry
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        confirmState = entry.toConfirmState(),
+                    )
+                }
+            } catch (_: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, notFound = true, errorMessage = "load_failed")
+                }
             }
         }
     }
@@ -94,10 +101,16 @@ class MealEditViewModel @Inject constructor(
     fun selectQuickQuantity(value: Double) =
         updateQuantity(if (value % 1.0 == 0.0) value.toInt().toString() else value.toString())
     fun updateServingGrams(text: String) = updateConfirm { applyServing(it, text) }
-    fun selectMealSlot(slot: MealSlot) = updateConfirm { it.copy(mealSlot = slot) }
-    fun updateDate(date: LocalDate) = updateConfirm { it.copy(localDate = date) }
-    fun updateTime(time: LocalTime) = updateConfirm {
-        it.copy(time = time, mealSlot = MealSlotInferencer.infer(time))
+    fun selectMealSlot(slot: MealSlot) = updateConfirm { state ->
+        state.copy(mealSlot = slot, canSubmit = validateConfirm(state.copy(mealSlot = slot)))
+    }
+    fun updateDate(date: LocalDate) = updateConfirm { state ->
+        val next = state.copy(localDate = date)
+        next.copy(canSubmit = validateConfirm(next))
+    }
+    fun updateTime(time: LocalTime) = updateConfirm { state ->
+        val next = state.copy(time = time, mealSlot = MealSlotInferencer.infer(time))
+        next.copy(canSubmit = validateConfirm(next))
     }
 
     fun submit() {
@@ -221,8 +234,11 @@ class MealEditViewModel @Inject constructor(
         }
         val consumedAt = DateTimeUtil.combineDateAndTime(state.localDate, state.time)
         if (consumedAt > DateTimeUtil.nowEpochMillis()) return false
-        val minDate = DateTimeUtil.parseLocalDate(_uiState.value.minDate)
-        if (state.localDate.isBefore(minDate)) return false
+        val minDateText = _uiState.value.minDate
+        if (minDateText.isNotBlank()) {
+            val minDate = runCatching { DateTimeUtil.parseLocalDate(minDateText) }.getOrNull()
+            if (minDate != null && state.localDate.isBefore(minDate)) return false
+        }
         return true
     }
 
