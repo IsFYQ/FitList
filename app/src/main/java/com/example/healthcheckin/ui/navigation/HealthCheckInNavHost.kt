@@ -1,5 +1,10 @@
 package com.example.healthcheckin.ui.navigation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -9,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import com.example.healthcheckin.ui.theme.HealthCheckInMotion
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
@@ -55,11 +61,24 @@ fun HealthCheckInNavHost(
         }
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+    ) { padding ->
         NavHost(
             navController = navController,
             startDestination = SplashRoute,
             modifier = Modifier.padding(padding),
+            enterTransition = {
+                fadeIn(HealthCheckInMotion.standard()) +
+                    slideInHorizontally(HealthCheckInMotion.standard()) { it / 12 }
+            },
+            exitTransition = { fadeOut(HealthCheckInMotion.fade()) },
+            popEnterTransition = { fadeIn(HealthCheckInMotion.standard()) },
+            popExitTransition = {
+                fadeOut(HealthCheckInMotion.fade()) +
+                    slideOutHorizontally(HealthCheckInMotion.standard()) { it / 12 }
+            },
         ) {
             composable<SplashRoute> {
                 SplashScreen()

@@ -41,7 +41,7 @@ data class InventoryFormUiState(
     val unit: InventoryUnit = InventoryUnit.G,
     val pieceGramsText: String = "",
     val purchaseDate: String = DateTimeUtil.todayLocalDateString(),
-    val expiryDate: String = "",
+    val expiryDate: String = DateTimeUtil.formatLocalDate(DateTimeUtil.todayLocalDate().plusDays(7)),
     val unitPriceText: String = "",
     val suggestions: List<String> = emptyList(),
     val unitLocked: Boolean = false,
@@ -64,9 +64,13 @@ class InventoryListViewModel @Inject constructor(
         viewModelScope.launch {
             val userId = sessionManager.getUserId() ?: return@launch
             analyticsTracker.track(AnalyticsEvents.INVENTORY_LIST_VIEWED)
-            inventoryRepository.observeItems(userId).collect { items ->
-                allItems = items
-                applyFilter()
+            try {
+                inventoryRepository.observeItems(userId).collect { items ->
+                    allItems = items
+                    applyFilter()
+                }
+            } catch (_: Exception) {
+                _uiState.update { it.copy(items = emptyList()) }
             }
         }
     }
@@ -138,7 +142,17 @@ class InventoryFormViewModel @Inject constructor(
     private val analyticsTracker: AnalyticsTracker,
 ) : ViewModel() {
     private val itemId: String? = savedStateHandle["itemId"]
-    private val _uiState = MutableStateFlow(InventoryFormUiState(itemId = itemId, unitLocked = itemId != null))
+    private val _uiState = MutableStateFlow(
+        InventoryFormUiState(
+            itemId = itemId,
+            unitLocked = itemId != null,
+            expiryDate = if (itemId == null) {
+                DateTimeUtil.formatLocalDate(DateTimeUtil.todayLocalDate().plusDays(7))
+            } else {
+                ""
+            },
+        ),
+    )
     val uiState: StateFlow<InventoryFormUiState> = _uiState.asStateFlow()
 
     init {
@@ -154,8 +168,13 @@ class InventoryFormViewModel @Inject constructor(
                     remainingText = item.remainingAmount.toString(),
                     unit = item.unit,
                     pieceGramsText = item.pieceGrams?.toString().orEmpty(),
-                    purchaseDate = item.purchaseDate,
-                    expiryDate = item.expiryDate.orEmpty(),
+                    purchaseDate = DateTimeUtil.parseLocalDateOrNull(item.purchaseDate)
+                        ?.let(DateTimeUtil::formatLocalDate)
+                        ?: DateTimeUtil.todayLocalDateString(),
+                    expiryDate = item.expiryDate
+                        ?.let { date -> DateTimeUtil.parseLocalDateOrNull(date) }
+                        ?.let(DateTimeUtil::formatLocalDate)
+                        .orEmpty(),
                     unitPriceText = item.unitPrice?.toString().orEmpty(),
                     unitLocked = true,
                 )
@@ -195,10 +214,27 @@ class InventoryFormViewModel @Inject constructor(
             _uiState.update { it.copy(errorMessage = "amount") }
             return
         }
-        if (state.expiryDate.isNotBlank() && state.expiryDate < state.purchaseDate) {
+        val purchase = DateTimeUtil.parseFlexibleLocalDate(state.purchaseDate)
+        if (purchase == null) {
+            _uiState.update { it.copy(errorMessage = "date") }
+            return
+        }
+        val expiryRaw = state.expiryDate.trim()
+        val expiry = if (expiryRaw.isBlank()) {
+            null
+        } else {
+            DateTimeUtil.parseFlexibleLocalDate(expiryRaw)
+        }
+        if (expiryRaw.isNotBlank() && expiry == null) {
+            _uiState.update { it.copy(errorMessage = "expiry_format") }
+            return
+        }
+        if (expiry != null && expiry.isBefore(purchase)) {
             _uiState.update { it.copy(errorMessage = "expiry") }
             return
         }
+        val purchaseDate = DateTimeUtil.formatLocalDate(purchase)
+        val expiryDate = expiry?.let { DateTimeUtil.formatLocalDate(it) }
         viewModelScope.launch {
             val userId = sessionManager.getUserId() ?: return@launch
             _uiState.update { it.copy(isSaving = true) }
@@ -213,8 +249,8 @@ class InventoryFormViewModel @Inject constructor(
                         amount = amount,
                         unit = state.unit,
                         pieceGrams = piece,
-                        purchaseDate = state.purchaseDate,
-                        expiryDate = state.expiryDate.takeIf { it.isNotBlank() },
+                        purchaseDate = purchaseDate,
+                        expiryDate = expiryDate,
                         unitPrice = price,
                     ),
                 ).onSuccess { analyticsTracker.track(AnalyticsEvents.INVENTORY_ITEM_CREATED, mapOf("category" to state.category.name, "unit" to state.unit.name)) }
@@ -227,8 +263,8 @@ class InventoryFormViewModel @Inject constructor(
                         category = state.category,
                         remainingAmount = amount.coerceAtLeast(0.0),
                         pieceGrams = piece,
-                        purchaseDate = state.purchaseDate,
-                        expiryDate = state.expiryDate.takeIf { it.isNotBlank() },
+                        purchaseDate = purchaseDate,
+                        expiryDate = expiryDate,
                         unitPrice = price,
                     ),
                 ).onSuccess { analyticsTracker.track(AnalyticsEvents.INVENTORY_ITEM_EDITED) }

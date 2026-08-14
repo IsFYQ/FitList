@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -92,8 +93,12 @@ fun RecommendationScreen(
     }
 
     LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let {
-            Toast.makeText(context, context.getString(R.string.recommend_error_log), Toast.LENGTH_SHORT).show()
+        uiState.errorMessage?.let { key ->
+            val resId = when (key) {
+                "recommend_error_load" -> R.string.recommend_error_load
+                else -> R.string.recommend_error_log
+            }
+            Toast.makeText(context, context.getString(resId), Toast.LENGTH_SHORT).show()
             viewModel.clearError()
         }
     }
@@ -355,11 +360,24 @@ private fun ComboCard(
             MacroProgress(label = stringResource(R.string.recommend_gap_fat), value = comboMacroRatio(combo, "fat"))
             Spacer(modifier = Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onLogMeal, modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.recommend_log_meal))
+                Button(
+                    onClick = onLogMeal,
+                    modifier = Modifier.weight(1f).heightIn(min = HealthCheckInDimens.ButtonHeight),
+                ) {
+                    Text(
+                        text = stringResource(R.string.recommend_log_meal),
+                        maxLines = 1,
+                    )
                 }
-                OutlinedButton(onClick = onSwap, enabled = swapEnabled) {
-                    Text(stringResource(R.string.recommend_swap))
+                OutlinedButton(
+                    onClick = onSwap,
+                    enabled = swapEnabled,
+                    modifier = Modifier.weight(1f).heightIn(min = HealthCheckInDimens.ButtonHeight),
+                ) {
+                    Text(
+                        text = stringResource(R.string.recommend_swap),
+                        maxLines = 1,
+                    )
                 }
             }
         }
@@ -376,7 +394,12 @@ private fun ComboItemRow(item: RecommendationComboItem) {
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(modifier = Modifier.weight(1f)) {
-            Text(text = item.candidate.inventoryName)
+            Text(
+                text = item.candidate.inventoryName,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
             if (nearExpiry) {
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(

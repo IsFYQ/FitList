@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.healthcheckin.R
@@ -46,8 +47,9 @@ fun OnboardingStep5(
         Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = PrecisionUtil.formatCaloriesWithSeparator(budget),
-                fontSize = 48.sp,
+                fontSize = 40.sp,
                 fontWeight = FontWeight.Bold,
+                maxLines = 1,
             )
             Text(text = stringResource(R.string.onboarding_budget_unit))
         }
@@ -141,8 +143,18 @@ private fun MacroCard(
             modifier = Modifier.padding(12.dp),
             horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
         ) {
-            Text(text = name, style = MaterialTheme.typography.labelMedium)
-            Text(text = "${PrecisionUtil.roundMacroDisplay(grams)}g", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = name,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = "${PrecisionUtil.roundMacroDisplay(grams)}g",
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Text(text = "$percent%", style = MaterialTheme.typography.bodySmall)
         }
     }

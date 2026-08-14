@@ -2,6 +2,12 @@ package com.example.healthcheckin.ui.screens.onboarding
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -34,7 +41,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.healthcheckin.ui.theme.HealthCheckInDimens
+import com.example.healthcheckin.ui.theme.HealthCheckInMotion
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.healthcheckin.R
@@ -178,54 +188,80 @@ fun OnboardingScreen(
             StepProgressIndicator(
                 currentStep = uiState.currentStep,
                 totalSteps = uiState.totalSteps,
+                stepTitle = when (uiState.currentStep) {
+                    1 -> stringResource(R.string.onboarding_step1_title)
+                    2 -> stringResource(R.string.onboarding_step2_title)
+                    3 -> stringResource(R.string.onboarding_step3_title)
+                    4 -> stringResource(R.string.onboarding_step4_title)
+                    else -> stringResource(R.string.onboarding_step5_title)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                    .padding(
+                        horizontal = HealthCheckInDimens.Space4,
+                        vertical = HealthCheckInDimens.Space3,
+                    ),
             )
 
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp),
-            ) {
-                when (uiState.currentStep) {
-                    1 -> OnboardingStep1(
-                        sex = uiState.sex,
-                        birthYearMonth = uiState.birthYearMonth,
-                        sexError = uiState.sexError,
-                        birthError = uiState.birthError,
-                        onSexSelected = viewModel::onSexSelected,
-                        onBirthYearMonthChanged = viewModel::onBirthYearMonthChanged,
-                    )
-                    2 -> OnboardingStep2(
-                        heightCm = uiState.heightCm,
-                        currentWeightKg = uiState.currentWeightKg,
-                        heightError = uiState.heightError,
-                        currentWeightError = uiState.currentWeightError,
-                        onHeightChanged = viewModel::onHeightChanged,
-                        onCurrentWeightChanged = viewModel::onCurrentWeightChanged,
-                    )
-                    3 -> OnboardingStep3(
-                        targetWeightKg = uiState.targetWeightKg,
-                        targetWeeks = uiState.targetWeeks,
-                        goalPreview = viewModel.goalPreviewText(),
-                        isMaintain = uiState.isMaintainGoal,
-                        targetWeightError = uiState.targetWeightError,
-                        onTargetWeightChanged = viewModel::onTargetWeightChanged,
-                        onTargetWeeksChanged = viewModel::onTargetWeeksChanged,
-                    )
-                    4 -> OnboardingStep4(
-                        selected = uiState.activityLevel,
-                        onSelected = viewModel::onActivityLevelSelected,
-                    )
-                    5 -> uiState.calculation?.let { calc ->
-                        OnboardingStep5(
-                            calculation = calc,
-                            targetWeeks = uiState.targetWeeks,
-                            showExpanded = uiState.showCalculationExpanded,
-                            onToggleExpanded = viewModel::toggleCalculationExpanded,
+            AnimatedContent(
+                targetState = uiState.currentStep,
+                modifier = Modifier.weight(1f),
+                transitionSpec = {
+                    val forward = targetState > initialState
+                    val enter = fadeIn(HealthCheckInMotion.standard()) + slideInHorizontally(
+                        HealthCheckInMotion.standard(),
+                    ) { width -> if (forward) width / 8 else -width / 8 }
+                    val exit = fadeOut(HealthCheckInMotion.fade()) + slideOutHorizontally(
+                        HealthCheckInMotion.standard(),
+                    ) { width -> if (forward) -width / 8 else width / 8 }
+                    enter togetherWith exit
+                },
+                label = "onboardingStep",
+            ) { step ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = HealthCheckInDimens.Space4),
+                ) {
+                    when (step) {
+                        1 -> OnboardingStep1(
+                            sex = uiState.sex,
+                            birthYearMonth = uiState.birthYearMonth,
+                            sexError = uiState.sexError,
+                            birthError = uiState.birthError,
+                            onSexSelected = viewModel::onSexSelected,
+                            onBirthYearMonthChanged = viewModel::onBirthYearMonthChanged,
                         )
+                        2 -> OnboardingStep2(
+                            heightCm = uiState.heightCm,
+                            currentWeightKg = uiState.currentWeightKg,
+                            heightError = uiState.heightError,
+                            currentWeightError = uiState.currentWeightError,
+                            onHeightChanged = viewModel::onHeightChanged,
+                            onCurrentWeightChanged = viewModel::onCurrentWeightChanged,
+                        )
+                        3 -> OnboardingStep3(
+                            targetWeightKg = uiState.targetWeightKg,
+                            targetWeeks = uiState.targetWeeks,
+                            goalPreview = viewModel.goalPreviewText(),
+                            isMaintain = uiState.isMaintainGoal,
+                            targetWeightError = uiState.targetWeightError,
+                            onTargetWeightChanged = viewModel::onTargetWeightChanged,
+                            onTargetWeeksChanged = viewModel::onTargetWeeksChanged,
+                        )
+                        4 -> OnboardingStep4(
+                            selected = uiState.activityLevel,
+                            onSelected = viewModel::onActivityLevelSelected,
+                        )
+                        5 -> uiState.calculation?.let { calc ->
+                            OnboardingStep5(
+                                calculation = calc,
+                                targetWeeks = uiState.targetWeeks,
+                                showExpanded = uiState.showCalculationExpanded,
+                                onToggleExpanded = viewModel::toggleCalculationExpanded,
+                            )
+                        }
                     }
                 }
             }
@@ -233,35 +269,50 @@ fun OnboardingScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                    .padding(
+                        horizontal = HealthCheckInDimens.Space4,
+                        vertical = HealthCheckInDimens.Space3,
+                    ),
+                verticalArrangement = Arrangement.spacedBy(HealthCheckInDimens.Space2),
             ) {
                 if (uiState.currentStep == 5) {
                     Button(
                         onClick = viewModel::saveGoal,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = HealthCheckInDimens.ButtonHeight),
                         enabled = uiState.canProceed,
                     ) {
                         if (uiState.isSaving) {
                             CircularProgressIndicator(modifier = Modifier.size(20.dp))
                         } else {
-                            Text(stringResource(R.string.onboarding_start_button))
+                            Text(
+                                text = stringResource(R.string.onboarding_start_button),
+                                maxLines = 1,
+                            )
                         }
                     }
                 } else {
                     Button(
                         onClick = viewModel::nextStep,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = HealthCheckInDimens.ButtonHeight),
                         enabled = uiState.canProceed,
                     ) {
-                        Text(stringResource(R.string.onboarding_next))
+                        Text(
+                            text = stringResource(R.string.onboarding_next),
+                            maxLines = 1,
+                        )
                     }
                 }
 
                 if (uiState.currentStep > 1) {
                     TextButton(
                         onClick = viewModel::previousStep,
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .heightIn(min = HealthCheckInDimens.MinTouchTarget),
                     ) {
                         Text(stringResource(R.string.onboarding_previous))
                     }
@@ -275,29 +326,34 @@ fun OnboardingScreen(
 private fun StepProgressIndicator(
     currentStep: Int,
     totalSteps: Int,
+    stepTitle: String,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        LinearProgressIndicator(
-            progress = { currentStep.toFloat() / totalSteps.toFloat() },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(modifier = Modifier.height(8.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            repeat(totalSteps) { index ->
-                Text(
-                    text = "${index + 1}",
-                    color = if (index + 1 == currentStep) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-                    },
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
+            Text(
+                text = stringResource(R.string.onboarding_step_indicator, currentStep, totalSteps),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = stepTitle,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = HealthCheckInDimens.Space2),
+            )
         }
+        Spacer(modifier = Modifier.height(HealthCheckInDimens.Space2))
+        LinearProgressIndicator(
+            progress = { currentStep.toFloat() / totalSteps.toFloat() },
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }

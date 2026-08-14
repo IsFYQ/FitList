@@ -101,8 +101,13 @@ class MealRepositoryImpl @Inject constructor(
                 if (request.inventoryItemId != null && request.deductChoice != null) {
                     val deducted = inventoryRepository.applyDeduct(
                         userId, request.inventoryItemId, entryId, basisAmount, food.basisUnit.let(BasisUnit::valueOf), request.deductChoice,
-                    ).getOrThrow()
-                    mealEntryDao.update(entry.copy(inventoryDeductedAmount = deducted))
+                    ).getOrDefault(0.0)
+                    mealEntryDao.update(
+                        entry.copy(
+                            fromInventory = deducted > 0.0,
+                            inventoryDeductedAmount = deducted.takeIf { it > 0.0 },
+                        ),
+                    )
                 }
                 enqueueSync("meal_entries", entryId, now)
 
@@ -171,13 +176,23 @@ class MealRepositoryImpl @Inject constructor(
                 )
                 mealEntryDao.update(updated)
                 if (existing.fromInventory && existing.inventoryItemId != null && existing.inventoryDeductedAmount != null) {
-                    inventoryRepository.revertDeduct(userId, existing.id, existing.inventoryItemId, existing.inventoryDeductedAmount).getOrThrow()
-                    val choice = com.example.healthcheckin.domain.model.InventoryDeductChoice(
-                        com.example.healthcheckin.util.InventoryDeductResolution.MANUAL,
-                        existing.inventoryDeductedAmount + (basisAmount - existing.basisAmount),
+                    inventoryRepository.revertDeduct(userId, existing.id, existing.inventoryItemId, existing.inventoryDeductedAmount).getOrDefault(Unit)
+                    val deducted = inventoryRepository.applyDeduct(
+                        userId,
+                        existing.inventoryItemId,
+                        existing.id,
+                        basisAmount,
+                        BasisUnit.valueOf(existing.snapBasisUnit),
+                        com.example.healthcheckin.domain.model.InventoryDeductChoice(
+                            com.example.healthcheckin.util.InventoryDeductResolution.DEDUCT_REMAINING,
+                        ),
+                    ).getOrDefault(0.0)
+                    mealEntryDao.update(
+                        updated.copy(
+                            fromInventory = deducted > 0.0,
+                            inventoryDeductedAmount = deducted.takeIf { it > 0.0 },
+                        ),
                     )
-                    val deducted = inventoryRepository.applyDeduct(userId, existing.inventoryItemId, existing.id, basisAmount, BasisUnit.valueOf(existing.snapBasisUnit), choice).getOrThrow()
-                    mealEntryDao.update(updated.copy(inventoryDeductedAmount = deducted))
                 }
                 enqueueSync("meal_entries", updated.id, now)
 
@@ -211,7 +226,7 @@ class MealRepositoryImpl @Inject constructor(
         database.withTransaction {
             val entry = mealEntryDao.getById(entryId)
             if (entry?.fromInventory == true && entry.inventoryItemId != null && entry.inventoryDeductedAmount != null) {
-                inventoryRepository.revertDeduct(entry.userId, entry.id, entry.inventoryItemId, entry.inventoryDeductedAmount).getOrThrow()
+                inventoryRepository.revertDeduct(entry.userId, entry.id, entry.inventoryItemId, entry.inventoryDeductedAmount).getOrDefault(Unit)
             }
             mealEntryDao.softDelete(entryId, now, now, SyncState.PENDING)
             enqueueSync("meal_entries", entryId, now)
@@ -227,7 +242,7 @@ class MealRepositoryImpl @Inject constructor(
             val entry = mealEntryDao.getByIdRaw(entryId)
             if (entry?.fromInventory == true && entry.inventoryItemId != null && entry.inventoryDeductedAmount != null) {
                 inventoryRepository.applyDeduct(entry.userId, entry.inventoryItemId, entry.id, entry.basisAmount, BasisUnit.valueOf(entry.snapBasisUnit),
-                    com.example.healthcheckin.domain.model.InventoryDeductChoice(com.example.healthcheckin.util.InventoryDeductResolution.MANUAL, entry.inventoryDeductedAmount)).getOrThrow()
+                    com.example.healthcheckin.domain.model.InventoryDeductChoice(com.example.healthcheckin.util.InventoryDeductResolution.MANUAL, entry.inventoryDeductedAmount)).getOrDefault(0.0)
             }
             mealEntryDao.restoreSoftDelete(entryId, now, SyncState.PENDING)
             enqueueSync("meal_entries", entryId, now)
@@ -268,11 +283,11 @@ class MealRepositoryImpl @Inject constructor(
     ): FoodEntity {
         item.foodId?.let { foodDao.getById(it) }?.let { return it }
 
-        if (item.externalId != null) {
-            foodDao.getByExternalId(userId, item.source.name, item.externalId)?.let { return it }
-        }
-
         val publicFood = item.publicFoodId?.let { publicFoodDao.getById(it) }
+        val resolvedExternalId = item.externalId ?: publicFood?.externalId ?: item.publicFoodId
+        if (resolvedExternalId != null) {
+            foodDao.getByExternalId(userId, item.source.name, resolvedExternalId)?.let { return it }
+        }
 
         val servingGrams = servingGramsOverride ?: item.servingGrams ?: publicFood?.servingGrams
         val id = UuidV7.generate()
@@ -280,7 +295,7 @@ class MealRepositoryImpl @Inject constructor(
             id = id,
             userId = userId,
             source = item.source.name,
-            externalId = item.externalId ?: publicFood?.externalId,
+            externalId = resolvedExternalId,
             name = item.name,
             nameNormalized = Validators.normalizeFoodName(item.name),
             brand = item.brand ?: publicFood?.brand,

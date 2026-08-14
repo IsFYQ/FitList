@@ -46,8 +46,6 @@ data class MealConfirmUiState(
     val inventoryMatch: com.example.healthcheckin.domain.model.InventoryMatchResult? = null,
     val inventoryPreview: com.example.healthcheckin.domain.model.InventoryDeductPreview? = null,
     val deductChecked: Boolean = false,
-    val showInsufficientDialog: Boolean = false,
-    val showL3Confirm: Boolean = false,
     val showInventoryPicker: Boolean = false,
     val inventoryCandidates: List<com.example.healthcheckin.domain.model.InventoryItem> = emptyList(),
 )

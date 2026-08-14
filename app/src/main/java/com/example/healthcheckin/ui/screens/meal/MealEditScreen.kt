@@ -84,7 +84,7 @@ fun MealEditScreen(
                 Box(modifier = Modifier.fillMaxSize().padding(padding)) {
                     MealConfirmSheet(
                         state = uiState.confirmState!!,
-                        minDate = DateTimeUtil.parseLocalDate(uiState.minDate),
+                        minDate = DateTimeUtil.parseLocalDateOrNull(uiState.minDate) ?: DateTimeUtil.todayLocalDate(),
                         onDismiss = onBack,
                         onQuantityChange = viewModel::updateQuantity,
                         onAdjustQuantity = viewModel::adjustQuantity,

@@ -1,6 +1,9 @@
 package com.example.healthcheckin.ui.screens.dashboard.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,10 +12,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -37,6 +40,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.healthcheckin.R
@@ -78,9 +83,7 @@ fun DeviceTimeWarningBanner(modifier: Modifier = Modifier) {
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Row(
-            modifier = Modifier
-                .padding(HealthCheckInDimens.Space3)
-                .height(HealthCheckInDimens.MinTouchTarget),
+            modifier = Modifier.padding(HealthCheckInDimens.Space3),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -178,85 +181,90 @@ fun CalorieCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(HealthCheckInDimens.Space5),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            when {
-                hasNoGoal -> {
+        when {
+            hasNoGoal -> {
+                Column(modifier = Modifier.padding(HealthCheckInDimens.Space4)) {
                     Text(
                         text = stringResource(R.string.dashboard_no_goal_hint),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
-                    Spacer(modifier = Modifier.height(HealthCheckInDimens.Space2))
                     Text(
                         text = stringResource(R.string.dashboard_go_setup_goal),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .height(HealthCheckInDimens.MinTouchTarget)
-                            .padding(top = HealthCheckInDimens.Space1),
+                        modifier = Modifier.padding(top = HealthCheckInDimens.Space2),
                     )
                 }
-                budgetAbnormal || overview == null -> {
-                    Text(
-                        text = stringResource(R.string.dashboard_budget_abnormal),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+            }
+            budgetAbnormal || overview == null -> {
+                Text(
+                    text = stringResource(R.string.dashboard_budget_abnormal),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(HealthCheckInDimens.Space4),
+                )
+            }
+            else -> {
+                val color = calorieColor(overview.state)
+                val mainText = when (overview.state) {
+                    CalorieState.OVER -> stringResource(
+                        R.string.dashboard_over_calories,
+                        PrecisionUtil.formatCaloriesWithSeparator(kotlin.math.abs(overview.remaining)),
+                    )
+                    else -> stringResource(
+                        R.string.dashboard_remaining_calories,
+                        PrecisionUtil.formatCaloriesWithSeparator(overview.remaining),
                     )
                 }
-                else -> {
-                    val color = calorieColor(overview.state)
-                    val mainText = when (overview.state) {
-                        CalorieState.OVER -> stringResource(
-                            R.string.dashboard_over_calories,
-                            PrecisionUtil.formatCaloriesWithSeparator(kotlin.math.abs(overview.remaining)),
-                        )
-                        else -> stringResource(
-                            R.string.dashboard_remaining_calories,
-                            PrecisionUtil.formatCaloriesWithSeparator(overview.remaining),
-                        )
-                    }
-                    Text(
-                        text = mainText,
-                        style = MaterialTheme.typography.displaySmall,
-                        color = color,
+                val subtitle = when (overview.state) {
+                    CalorieState.WARN -> stringResource(R.string.dashboard_warn_near_limit)
+                    else -> stringResource(
+                        R.string.dashboard_budget_consumed,
+                        PrecisionUtil.formatCaloriesWithSeparator(overview.budget),
+                        PrecisionUtil.formatCaloriesWithSeparator(overview.consumed),
                     )
-                    val subtitle = when (overview.state) {
-                        CalorieState.WARN -> stringResource(R.string.dashboard_warn_near_limit)
-                        else -> stringResource(
-                            R.string.dashboard_budget_consumed,
-                            PrecisionUtil.formatCaloriesWithSeparator(overview.budget),
-                            PrecisionUtil.formatCaloriesWithSeparator(overview.consumed),
-                        )
-                    }
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = HealthCheckInDimens.Space1),
-                    )
-                    if (budget?.isInferred == true) {
-                        Text(
-                            text = stringResource(R.string.dashboard_budget_inferred),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(HealthCheckInDimens.Space3))
-                    val progress = if (overview.budget > 0) {
-                        overview.consumed.toFloat() / overview.budget.toFloat()
-                    } else {
-                        0f
-                    }
+                }
+                val progress = if (overview.budget > 0) {
+                    overview.consumed.toFloat() / overview.budget.toFloat()
+                } else {
+                    0f
+                }
+                Row(
+                    modifier = Modifier.padding(HealthCheckInDimens.Space4),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     CircularProgressIndicator(
                         progress = { progress.coerceIn(0f, 1f) },
-                        modifier = Modifier.size(80.dp),
+                        modifier = Modifier.size(56.dp),
                         color = color,
                         trackColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
-                        strokeWidth = 8.dp,
+                        strokeWidth = 6.dp,
                     )
+                    Column(modifier = Modifier.padding(start = HealthCheckInDimens.Space4).weight(1f)) {
+                        Text(
+                            text = mainText,
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = color,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = HealthCheckInDimens.Space1),
+                        )
+                        if (budget?.isInferred == true) {
+                            Text(
+                                text = stringResource(R.string.dashboard_budget_inferred),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -300,11 +308,19 @@ private fun MacroProgressRow(macro: MacroProgress) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(macro.name, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = macro.name,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f).padding(end = HealthCheckInDimens.Space2),
+            )
             Text(
                 text = "${PrecisionUtil.roundMacroDisplay(macro.consumed)}/${PrecisionUtil.roundMacroDisplay(macro.target)}g · ${macro.percentText}",
                 style = MaterialTheme.typography.bodySmall,
                 color = if (macro.isOver) indicatorColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         LinearProgressIndicator(
@@ -374,6 +390,8 @@ fun WeightCard(
                         text = "${PrecisionUtil.roundWeightDisplay(data.latestWeightKg ?: 0.0)}kg",
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     data.deltaKg?.let { delta ->
                         val sign = if (data.deltaPositive) "↑" else "↓"
@@ -408,17 +426,91 @@ fun WeightCard(
 }
 
 @Composable
+fun RecommendMealCard(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    DashboardLinkCard(
+        title = stringResource(R.string.dashboard_recommend_meal),
+        subtitle = stringResource(R.string.dashboard_recommend_meal_hint),
+        onClick = onClick,
+        modifier = modifier,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DashboardLinkCard(
+    title: String,
+    subtitle: String? = null,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(HealthCheckInRadius.Card),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant,
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(HealthCheckInDimens.CardPadding)
+                .fillMaxWidth()
+                .heightIn(min = HealthCheckInDimens.MinTouchTarget),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (!subtitle.isNullOrBlank()) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = HealthCheckInDimens.Space1),
+                    )
+                }
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+    }
+}
+
+@Composable
 fun MealListSection(
     groups: List<MealGroup>,
     highlightEntryId: String? = null,
     onEntryClick: (String) -> Unit,
     onDeleteEntry: (com.example.healthcheckin.data.local.entity.MealEntryEntity) -> Unit,
     modifier: Modifier = Modifier,
+    emptyMessage: String? = null,
+    emptyActionLabel: String? = null,
+    onEmptyAction: (() -> Unit)? = null,
 ) {
     if (groups.isEmpty()) {
         AppEmptyState(
             title = stringResource(R.string.dashboard_empty_meals),
+            message = emptyMessage,
             icon = Icons.Outlined.Restaurant,
+            actionLabel = emptyActionLabel,
+            onAction = onEmptyAction,
             modifier = modifier,
         )
         return
@@ -465,6 +557,17 @@ private fun MealEntryRow(
     onDelete: () -> Unit,
 ) {
     var offsetX by remember { mutableFloatStateOf(0f) }
+    var settling by remember { mutableStateOf(false) }
+    val animatedOffset by animateFloatAsState(
+        targetValue = offsetX,
+        animationSpec = if (settling) {
+            spring(dampingRatio = 0.85f, stiffness = 500f)
+        } else {
+            snap()
+        },
+        finishedListener = { settling = false },
+        label = "mealSwipe",
+    )
     val deleteWidth = 72.dp
     val deleteWidthPx = with(LocalDensity.current) { deleteWidth.toPx() }
     val maxOffset = -deleteWidthPx
@@ -517,13 +620,15 @@ private fun MealEntryRow(
             onClick = onClick,
             modifier = Modifier
                 .fillMaxWidth()
-                .offset { IntOffset(offsetX.roundToInt(), 0) }
+                .offset { IntOffset(animatedOffset.roundToInt(), 0) }
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
+                            settling = true
                             offsetX = if (kotlin.math.abs(offsetX) > deleteWidthPx / 2f) maxOffset else 0f
                         },
                         onHorizontalDrag = { _, dragAmount ->
+                            settling = false
                             offsetX = (offsetX + dragAmount).coerceIn(maxOffset, 0f)
                         },
                     )
@@ -539,21 +644,29 @@ private fun MealEntryRow(
             Row(
                 modifier = Modifier
                     .padding(horizontal = HealthCheckInDimens.Space3, vertical = HealthCheckInDimens.Space3)
-                    .height(HealthCheckInDimens.ListRowMinHeight),
+                    .heightIn(min = HealthCheckInDimens.ListRowMinHeight),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(name, style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                     Text(
                         text = "$quantity · ${PrecisionUtil.formatCaloriesWithSeparator(kcal)}大卡",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 Text(
                     text = sourceLabel(source),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.secondary,
+                    maxLines = 1,
                 )
             }
         }

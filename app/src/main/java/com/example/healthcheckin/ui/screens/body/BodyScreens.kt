@@ -13,10 +13,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,6 +26,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
@@ -32,15 +35,20 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,9 +56,12 @@ import com.example.healthcheckin.R
 import com.example.healthcheckin.domain.model.BodyChartRange
 import com.example.healthcheckin.domain.model.BodyMetricSummary
 import com.example.healthcheckin.ui.components.AppEmptyState
+import com.example.healthcheckin.ui.screens.meal.MealDatePickerDialog
 import com.example.healthcheckin.ui.theme.HealthCheckInDimens
+import com.example.healthcheckin.util.BodyMetric
 import com.example.healthcheckin.util.DateTimeUtil
 import com.example.healthcheckin.util.PrecisionUtil
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,6 +71,49 @@ fun BodyMeasurementsScreen(
     viewModel: BodyMeasurementsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let {
+            val msg = when (it) {
+                "range" -> context.getString(
+                    R.string.body_range_error,
+                    uiState.recordingMetric?.labelZh.orEmpty(),
+                )
+                else -> context.getString(R.string.body_save_failed)
+            }
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
+        }
+    }
+
+    uiState.overwriteExisting?.let { existing ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissSheet,
+            title = { Text(stringResource(R.string.body_overwrite_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.body_overwrite_message,
+                        existing,
+                        uiState.valueText.toDoubleOrNull() ?: 0.0,
+                    ),
+                )
+            },
+            confirmButton = { TextButton(onClick = viewModel::confirmOverwrite) { Text(stringResource(R.string.common_confirm)) } },
+            dismissButton = { TextButton(onClick = viewModel::dismissSheet) { Text(stringResource(R.string.common_cancel)) } },
+        )
+    }
+    uiState.largeDiff?.let { diff ->
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text(stringResource(R.string.body_large_diff_title)) },
+            text = { Text(stringResource(R.string.body_large_diff_message, diff)) },
+            confirmButton = { TextButton(onClick = viewModel::confirmLargeDiff) { Text(stringResource(R.string.common_confirm)) } },
+            dismissButton = { TextButton(onClick = viewModel::dismissSheet) { Text(stringResource(R.string.common_cancel)) } },
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -78,14 +132,36 @@ fun BodyMeasurementsScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(uiState.summaries, key = { it.metric.name }) { summary ->
-                BodyMetricCard(summary = summary, onClick = { onOpenMetric(summary.metric.name) })
+                BodyMetricCard(
+                    summary = summary,
+                    onClick = { onOpenMetric(summary.metric.name) },
+                    onRecord = { viewModel.openRecordSheet(summary.metric) },
+                )
             }
         }
+    }
+
+    if (uiState.showSheet && uiState.recordingMetric != null) {
+        BodyInputSheet(
+            metric = uiState.recordingMetric!!,
+            valueText = uiState.valueText,
+            localDate = uiState.localDate,
+            minDate = uiState.minDate,
+            isSaving = uiState.isSaving,
+            onDismiss = viewModel::dismissSheet,
+            onValueChange = viewModel::updateValue,
+            onDateChange = viewModel::updateDate,
+            onSave = { viewModel.save() },
+        )
     }
 }
 
 @Composable
-private fun BodyMetricCard(summary: BodyMetricSummary, onClick: () -> Unit) {
+private fun BodyMetricCard(
+    summary: BodyMetricSummary,
+    onClick: () -> Unit,
+    onRecord: () -> Unit,
+) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
@@ -122,9 +198,7 @@ private fun BodyMetricCard(summary: BodyMetricSummary, onClick: () -> Unit) {
                     }
                 }
             }
-            if (summary.latest == null) {
-                TextButton(onClick = onClick) { Text(stringResource(R.string.body_record)) }
-            }
+            TextButton(onClick = onRecord) { Text(stringResource(R.string.body_record)) }
         }
     }
 }
@@ -160,7 +234,7 @@ fun BodyMetricDetailScreen(
                     stringResource(
                         R.string.body_overwrite_message,
                         existing,
-                        ValidatorsParse(uiState.valueText),
+                        uiState.valueText.toDoubleOrNull() ?: 0.0,
                     ),
                 )
             },
@@ -223,7 +297,9 @@ fun BodyMetricDetailScreen(
                         selected = uiState.range == range,
                         onClick = { viewModel.selectRange(range) },
                         shape = SegmentedButtonDefaults.itemShape(index, 3),
-                    ) { Text(stringResource(label)) }
+                    ) {
+                        Text(stringResource(label), maxLines = 1)
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
@@ -256,33 +332,105 @@ fun BodyMetricDetailScreen(
     }
 
     if (uiState.showSheet) {
-        AlertDialog(
-            onDismissRequest = viewModel::dismissSheet,
-            title = { Text(stringResource(R.string.body_record)) },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = uiState.valueText,
-                        onValueChange = viewModel::updateValue,
-                        label = { Text(stringResource(R.string.body_unit_cm)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(DateTimeUtil.formatDashboardDate(DateTimeUtil.formatLocalDate(uiState.localDate)))
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { viewModel.save() }, enabled = !uiState.isSaving) {
-                    Text(stringResource(R.string.common_save))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::dismissSheet) { Text(stringResource(R.string.common_cancel)) }
-            },
+        BodyInputSheet(
+            metric = uiState.metric,
+            valueText = uiState.valueText,
+            localDate = uiState.localDate,
+            minDate = uiState.minDate,
+            isSaving = uiState.isSaving,
+            onDismiss = viewModel::dismissSheet,
+            onValueChange = viewModel::updateValue,
+            onDateChange = viewModel::updateDate,
+            onSave = { viewModel.save() },
         )
     }
 }
 
-private fun ValidatorsParse(text: String): Double =
-    text.toDoubleOrNull() ?: 0.0
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BodyInputSheet(
+    metric: BodyMetric,
+    valueText: String,
+    localDate: LocalDate,
+    minDate: String,
+    isSaving: Boolean,
+    onDismiss: () -> Unit,
+    onValueChange: (String) -> Unit,
+    onDateChange: (LocalDate) -> Unit,
+    onSave: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showDatePicker by remember { mutableStateOf(false) }
+    val minLocalDate = DateTimeUtil.parseLocalDateOrNull(minDate) ?: DateTimeUtil.todayLocalDate()
+    val maxLocalDate = DateTimeUtil.todayLocalDate()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+            Text(
+                text = stringResource(R.string.body_record_title, metric.labelZh),
+                style = MaterialTheme.typography.titleLarge,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = valueText,
+                onValueChange = onValueChange,
+                label = { Text(stringResource(R.string.body_unit_cm)) },
+                suffix = { Text(stringResource(R.string.body_unit_cm)) },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = DateTimeUtil.formatDashboardDate(DateTimeUtil.formatLocalDate(localDate)),
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(stringResource(R.string.weight_date_label)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showDatePicker = true },
+            )
+            Text(
+                text = stringResource(R.string.body_change_date),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(start = 4.dp, top = 4.dp)
+                    .clickable { showDatePicker = true },
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = onSave,
+                enabled = !isSaving && valueText.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.common_save))
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+
+    if (showDatePicker) {
+        MealDatePickerDialog(
+            initialDate = localDate,
+            minDate = minLocalDate,
+            maxDate = maxLocalDate,
+            onDismiss = { showDatePicker = false },
+            onConfirm = { date ->
+                onDateChange(date)
+                showDatePicker = false
+            },
+        )
+    }
+}

@@ -16,11 +16,12 @@ object InventoryExpiryEvaluator {
     )
 
     fun evaluate(purchaseDate: String, expiryDate: String?, today: String = DateTimeUtil.todayLocalDateString()): ExpiryInfo {
-        val todayDate = LocalDate.parse(today)
-        val purchase = LocalDate.parse(purchaseDate)
+        val todayDate = DateTimeUtil.parseLocalDateOrNull(today) ?: DateTimeUtil.todayLocalDate()
+        val purchase = DateTimeUtil.parseLocalDateOrNull(purchaseDate) ?: todayDate
         val daysStored = ChronoUnit.DAYS.between(purchase, todayDate).toInt().coerceAtLeast(0)
 
-        if (expiryDate.isNullOrBlank()) {
+        val expiry = expiryDate?.let { DateTimeUtil.parseLocalDateOrNull(it) }
+        if (expiry == null) {
             return ExpiryInfo(
                 status = InventoryExpiryStatus.NORMAL,
                 daysStored = daysStored,
@@ -29,7 +30,6 @@ object InventoryExpiryEvaluator {
             )
         }
 
-        val expiry = LocalDate.parse(expiryDate)
         val daysLeft = ChronoUnit.DAYS.between(todayDate, expiry).toInt()
         return when {
             daysLeft < 0 -> ExpiryInfo(
@@ -113,28 +113,35 @@ object MilestoneEvaluator {
 }
 
 object InventoryUnitConverter {
+    private val knownInventoryUnits = setOf("G", "KG", "ML", "L", "PIECE")
+
+    /**
+     * Meal foods are recorded in g or ml; inventory may use kg / L / 个.
+     * g and ml are treated as 1:1 so logging is never blocked by mixed units.
+     */
     fun dimensionsCompatible(foodBasisUnit: String, inventoryUnit: String): Boolean {
-        val solid = setOf("G", "KG", "PIECE")
-        val liquid = setOf("ML", "L")
-        return when (foodBasisUnit) {
-            "G" -> inventoryUnit in solid
-            "ML" -> inventoryUnit in liquid
-            else -> false
-        }
+        if (foodBasisUnit != "G" && foodBasisUnit != "ML") return false
+        return inventoryUnit in knownInventoryUnits
+    }
+
+    fun canConvert(unit: String, pieceGrams: Double?): Boolean = when (unit) {
+        "G", "KG", "ML", "L" -> true
+        "PIECE" -> pieceGrams != null && pieceGrams > 0
+        else -> false
     }
 
     fun toBasis(quantity: Double, unit: String, pieceGrams: Double?): Double =
         com.example.healthcheckin.util.UnitConverter.inventoryToBasisAmount(quantity, unit, pieceGrams)
 
-    fun fromBasis(basisAmount: Double, unit: String, pieceGrams: Double?): Double {
+    fun fromBasis(basisAmount: Double, unit: String, pieceGrams: Double?): Double? {
         val factor = when (unit) {
             "G", "ML" -> 1.0
             "KG", "L" -> 1000.0
             "PIECE" -> {
-                require(pieceGrams != null && pieceGrams > 0)
+                if (pieceGrams == null || pieceGrams <= 0) return null
                 pieceGrams
             }
-            else -> throw IllegalArgumentException("Unknown unit $unit")
+            else -> return null
         }
         return basisAmount / factor
     }

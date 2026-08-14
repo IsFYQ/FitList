@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.healthcheckin.R
+import com.example.healthcheckin.ui.theme.HealthCheckInDimens
 import com.example.healthcheckin.util.DateTimeUtil
 import com.example.healthcheckin.util.Sex
 import com.example.healthcheckin.util.ValidationConstants
@@ -91,8 +92,9 @@ private fun SexCard(
     ) {
         Text(
             text = label,
-            modifier = Modifier.padding(vertical = 32.dp, horizontal = 16.dp),
+            modifier = Modifier.padding(vertical = HealthCheckInDimens.Space4, horizontal = HealthCheckInDimens.Space4),
             style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
         )
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.healthcheckin.R
+import com.example.healthcheckin.ui.theme.HealthCheckInDimens
 import com.example.healthcheckin.util.ActivityLevel
 
 @Composable
@@ -65,16 +66,17 @@ private fun ActivityLevelItem(
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
     ) {
         androidx.compose.foundation.layout.Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(horizontal = HealthCheckInDimens.Space4, vertical = HealthCheckInDimens.Space3),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             RadioButton(selected = selected, onClick = onClick)
-            Column(modifier = Modifier.padding(start = 8.dp)) {
-                Text(text = title, style = MaterialTheme.typography.titleMedium)
+            Column(modifier = Modifier.padding(start = HealthCheckInDimens.Space2).weight(1f)) {
+                Text(text = title, style = MaterialTheme.typography.titleMedium, maxLines = 1)
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    maxLines = 2,
                 )
             }
         }

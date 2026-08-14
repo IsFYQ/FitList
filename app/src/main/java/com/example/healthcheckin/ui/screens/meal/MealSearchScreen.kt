@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
@@ -187,7 +188,20 @@ fun MealSearchScreen(
                         }
                     }
                 } else {
-                    items(uiState.searchResults, key = { "${it.foodId ?: it.publicFoodId ?: it.name}-${it.source}" }) { food ->
+                    itemsIndexed(
+                        items = uiState.searchResults,
+                        key = { index, food ->
+                            listOf(
+                                food.foodId,
+                                food.publicFoodId,
+                                food.externalId,
+                                food.source.name,
+                                food.name,
+                                food.brand,
+                                index.toString(),
+                            ).joinToString("|")
+                        },
+                    ) { _, food ->
                         FoodSearchRow(
                             food = food,
                             showLastPortion = false,
@@ -223,7 +237,7 @@ fun MealSearchScreen(
     uiState.confirmState?.let { confirm ->
         MealConfirmSheet(
             state = confirm,
-            minDate = DateTimeUtil.parseLocalDate(uiState.minDate),
+            minDate = DateTimeUtil.parseLocalDateOrNull(uiState.minDate) ?: DateTimeUtil.todayLocalDate(),
             onDismiss = viewModel::dismissConfirm,
             onQuantityChange = viewModel::updateQuantity,
             onAdjustQuantity = viewModel::adjustQuantity,
@@ -240,9 +254,6 @@ fun MealSearchScreen(
             onOpenInventoryPicker = viewModel::openInventoryPicker,
             onSelectInventoryItem = viewModel::selectInventoryItem,
             onDismissInventoryPicker = viewModel::dismissInventoryPicker,
-            onConfirmL3 = viewModel::confirmL3Deduct,
-            onDismissL3 = viewModel::dismissL3Confirm,
-            onResolveInsufficient = { resolution -> viewModel.resolveInsufficient(resolution) },
         )
     }
 }

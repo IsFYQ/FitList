@@ -87,15 +87,41 @@ object DateTimeUtil {
     fun parseLocalDate(value: String): LocalDate =
         LocalDate.parse(value, localDateFormatter)
 
+    fun parseLocalDateOrNull(value: String): LocalDate? =
+        runCatching { LocalDate.parse(value.trim(), localDateFormatter) }.getOrNull()
+
+    fun parseFlexibleLocalDate(value: String, referenceYear: Int = todayLocalDate().year): LocalDate? {
+        val trimmed = value.trim()
+        if (trimmed.isEmpty()) return null
+        parseLocalDateOrNull(trimmed)?.let { return it }
+        if (Regex("""^\d{8}$""").matches(trimmed)) {
+            return runCatching { LocalDate.parse(trimmed, DateTimeFormatter.BASIC_ISO_DATE) }.getOrNull()
+        }
+        Regex("""^(\d{4})[./](\d{1,2})[./](\d{1,2})$""").matchEntire(trimmed)?.let { match ->
+            return runCatching {
+                LocalDate.of(match.groupValues[1].toInt(), match.groupValues[2].toInt(), match.groupValues[3].toInt())
+            }.getOrNull()
+        }
+        Regex("""^(\d{4})年(\d{1,2})月(\d{1,2})日?$""").matchEntire(trimmed)?.let { match ->
+            return runCatching {
+                LocalDate.of(match.groupValues[1].toInt(), match.groupValues[2].toInt(), match.groupValues[3].toInt())
+            }.getOrNull()
+        }
+        Regex("""^(\d{1,2})月(\d{1,2})日?$""").matchEntire(trimmed)?.let { match ->
+            return runCatching {
+                LocalDate.of(referenceYear, match.groupValues[1].toInt(), match.groupValues[2].toInt())
+            }.getOrNull()
+        }
+        return null
+    }
+
+    fun isIsoLocalDate(value: String): Boolean = parseLocalDateOrNull(value) != null
+
     fun formatLocalDate(date: LocalDate): String =
         date.format(localDateFormatter)
 
     fun formatDashboardDate(localDateString: String): String {
-        val date = if (localDateString.isBlank()) {
-            todayLocalDate()
-        } else {
-            parseLocalDate(localDateString)
-        }
+        val date = parseLocalDateOrNull(localDateString) ?: todayLocalDate()
         val dayOfWeek = when (date.dayOfWeek.value) {
             1 -> "周一"
             2 -> "周二"

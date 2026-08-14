@@ -1,5 +1,8 @@
 package com.example.healthcheckin.ui.navigation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DirectionsRun
@@ -15,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import com.example.healthcheckin.ui.theme.HealthCheckInMotion
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -45,31 +50,32 @@ fun MainTabScaffold(
     val currentDestination = backStackEntry?.destination
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
                     selected = currentDestination?.hasRoute<DashboardRoute>() == true,
                     onClick = { tabNavController.navigateToTab(DashboardRoute) },
                     icon = { Icon(Icons.Outlined.Home, contentDescription = null) },
-                    label = { Text(stringResource(R.string.tab_home)) },
+                    label = { TabLabel(stringResource(R.string.tab_home)) },
                 )
                 NavigationBarItem(
                     selected = currentDestination?.hasRoute<InventoryRoute>() == true,
                     onClick = { tabNavController.navigateToTab(InventoryRoute) },
                     icon = { Icon(Icons.Outlined.Kitchen, contentDescription = null) },
-                    label = { Text(stringResource(R.string.tab_inventory)) },
+                    label = { TabLabel(stringResource(R.string.tab_inventory)) },
                 )
                 NavigationBarItem(
                     selected = currentDestination?.hasRoute<WeightChartRoute>() == true,
                     onClick = { tabNavController.navigateToTab(WeightChartRoute) },
                     icon = { Icon(Icons.Outlined.MonitorWeight, contentDescription = null) },
-                    label = { Text(stringResource(R.string.tab_weight)) },
+                    label = { TabLabel(stringResource(R.string.tab_weight)) },
                 )
                 NavigationBarItem(
                     selected = currentDestination?.hasRoute<ExerciseRoute>() == true,
                     onClick = { tabNavController.navigateToTab(ExerciseRoute) },
                     icon = { Icon(Icons.Outlined.DirectionsRun, contentDescription = null) },
-                    label = { Text(stringResource(R.string.tab_exercise)) },
+                    label = { TabLabel(stringResource(R.string.tab_exercise)) },
                 )
             }
         },
@@ -78,6 +84,10 @@ fun MainTabScaffold(
             navController = tabNavController,
             startDestination = DashboardRoute,
             modifier = Modifier.padding(padding),
+            enterTransition = { fadeIn(HealthCheckInMotion.standard()) },
+            exitTransition = { fadeOut(HealthCheckInMotion.fade()) },
+            popEnterTransition = { fadeIn(HealthCheckInMotion.standard()) },
+            popExitTransition = { fadeOut(HealthCheckInMotion.fade()) },
         ) {
             composable<DashboardRoute> {
                 DashboardScreen(
@@ -109,6 +119,11 @@ fun MainTabScaffold(
             }
         }
     }
+}
+
+@Composable
+private fun TabLabel(text: String) {
+    Text(text = text, maxLines = 1, overflow = TextOverflow.Ellipsis)
 }
 
 private fun NavHostController.navigateToTab(route: Any) {

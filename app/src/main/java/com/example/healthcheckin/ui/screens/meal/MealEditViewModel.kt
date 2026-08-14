@@ -96,7 +96,8 @@ class MealEditViewModel @Inject constructor(
         updateQuantity(if (next % 1.0 == 0.0) next.toInt().toString() else next.toString())
     }
     fun selectUnit(unit: MealUnit) = updateConfirm { state ->
-        applyQuantity(state.copy(unit = unit), state.quantityText)
+        val quantity = if (unit == MealUnit.SERVING) "1" else "100"
+        applyQuantity(state.copy(unit = unit), quantity)
     }
     fun selectQuickQuantity(value: Double) =
         updateQuantity(if (value % 1.0 == 0.0) value.toInt().toString() else value.toString())

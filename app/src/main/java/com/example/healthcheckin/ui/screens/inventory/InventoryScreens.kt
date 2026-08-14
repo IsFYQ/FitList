@@ -21,8 +21,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -40,6 +43,9 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -47,20 +53,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.healthcheckin.R
 import com.example.healthcheckin.domain.model.InventoryItem
 import com.example.healthcheckin.ui.components.AppEmptyState
+import com.example.healthcheckin.ui.screens.meal.MealDatePickerDialog
 import com.example.healthcheckin.ui.theme.HealthCheckInDimens
+import com.example.healthcheckin.util.DateTimeUtil
 import com.example.healthcheckin.util.InventoryCategory
 import com.example.healthcheckin.util.InventoryExpiryStatus
 import com.example.healthcheckin.util.InventorySortMode
 import com.example.healthcheckin.util.InventoryUnit
 import com.example.healthcheckin.util.PrecisionUtil
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun InventoryListScreen(
     onAdd: () -> Unit,
@@ -115,8 +124,8 @@ fun InventoryListScreen(
                 singleLine = true,
                 placeholder = { Text(stringResource(R.string.inventory_search_hint)) },
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Spacer(modifier = Modifier.height(HealthCheckInDimens.Space2))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(HealthCheckInDimens.Space2)) {
                 SortChip(R.string.inventory_sort_category, uiState.sortMode == InventorySortMode.BY_CATEGORY) {
                     viewModel.setSort(InventorySortMode.BY_CATEGORY)
                 }
@@ -130,7 +139,12 @@ fun InventoryListScreen(
             Spacer(modifier = Modifier.height(8.dp))
             if (uiState.items.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    AppEmptyState(title = stringResource(R.string.inventory_empty))
+                    AppEmptyState(
+                        title = stringResource(R.string.inventory_empty),
+                        message = stringResource(R.string.inventory_empty_hint),
+                        actionLabel = stringResource(R.string.inventory_add),
+                        onAction = onAdd,
+                    )
                 }
             } else {
                 LazyColumn(
@@ -174,7 +188,17 @@ fun InventoryListScreen(
 
 @Composable
 private fun SortChip(labelRes: Int, selected: Boolean, onClick: () -> Unit) {
-    FilterChip(selected = selected, onClick = onClick, label = { Text(stringResource(labelRes)) })
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = {
+            Text(
+                text = stringResource(labelRes),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -194,6 +218,7 @@ private fun InventoryRow(
             }
         },
     )
+    val usedUp = item.remainingAmount <= 0
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = {
@@ -207,36 +232,66 @@ private fun InventoryRow(
             }
         },
     ) {
-        Column(
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .alpha(if (item.expiryStatus == InventoryExpiryStatus.EXPIRED || item.remainingAmount <= 0) 0.6f else 1f)
-                .clickable(onClick = onClick)
-                .padding(vertical = 10.dp),
+                .alpha(if (item.expiryStatus == InventoryExpiryStatus.EXPIRED || usedUp) 0.6f else 1f)
+                .clickable(onClick = onClick),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         ) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(item.name, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    stringResource(
-                        R.string.inventory_remaining,
-                        PrecisionUtil.roundStorage(item.remainingAmount).toString(),
-                        item.unit.labelZh,
-                    ),
-                )
-            }
-            Text(stringResource(R.string.inventory_stored_days, item.daysStored), style = MaterialTheme.typography.bodySmall)
-            item.expiryLabel?.let {
-                Text(
-                    it,
-                    color = if (item.expiryStatus == InventoryExpiryStatus.EXPIRED) Color.Red else Color(0xFFFF9800),
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
-            if (!item.canDeduct && item.unit == InventoryUnit.PIECE) {
-                Text(stringResource(R.string.inventory_no_piece_grams), color = Color.Gray, style = MaterialTheme.typography.labelSmall)
-            }
-            item.lastDeductLabel?.let {
-                Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = item.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.inventory_remaining,
+                            PrecisionUtil.roundStorage(item.remainingAmount).toString(),
+                            item.unit.labelZh,
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                if (usedUp) {
+                    Text(
+                        text = stringResource(R.string.inventory_used_up),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.inventory_stored_days, item.daysStored),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    item.expiryLabel?.let {
+                        Text(
+                            it,
+                            color = if (item.expiryStatus == InventoryExpiryStatus.EXPIRED) Color.Red else Color(0xFFFF9800),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
+                }
+                if (!item.canDeduct && item.unit == InventoryUnit.PIECE) {
+                    Text(
+                        stringResource(R.string.inventory_no_piece_grams),
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+                item.lastDeductLabel?.let {
+                    Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }
@@ -250,6 +305,10 @@ fun InventoryFormScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var showPurchasePicker by remember { mutableStateOf(false) }
+    var showExpiryPicker by remember { mutableStateOf(false) }
+    val today = DateTimeUtil.todayLocalDate()
+    val minPurchase = today.minusYears(2)
 
     LaunchedEffect(uiState.saved) {
         if (uiState.saved) onBack()
@@ -259,6 +318,7 @@ fun InventoryFormScreen(
             val msg = when (key) {
                 "amount" -> context.getString(R.string.inventory_amount_error)
                 "expiry" -> context.getString(R.string.inventory_expiry_before_purchase)
+                "expiry_format", "date" -> context.getString(R.string.inventory_date_invalid)
                 else -> context.getString(R.string.inventory_save_failed)
             }
             Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
@@ -358,20 +418,23 @@ fun InventoryFormScreen(
                     singleLine = true,
                 )
             }
-            OutlinedTextField(
+            InventoryDateField(
                 value = uiState.purchaseDate,
                 onValueChange = viewModel::updatePurchaseDate,
-                label = { Text(stringResource(R.string.inventory_purchase_date)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
+                label = stringResource(R.string.inventory_purchase_date),
+                onPickClick = { showPurchasePicker = true },
             )
-            OutlinedTextField(
+            InventoryDateField(
                 value = uiState.expiryDate,
                 onValueChange = viewModel::updateExpiryDate,
-                label = { Text(stringResource(R.string.inventory_expiry_date)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
+                label = stringResource(R.string.inventory_expiry_date),
+                onPickClick = { showExpiryPicker = true },
             )
+            if (uiState.expiryDate.isNotBlank()) {
+                TextButton(onClick = { viewModel.updateExpiryDate("") }) {
+                    Text(stringResource(R.string.inventory_clear_expiry))
+                }
+            }
             OutlinedTextField(
                 value = uiState.unitPriceText,
                 onValueChange = viewModel::updateUnitPrice,
@@ -381,4 +444,58 @@ fun InventoryFormScreen(
             )
         }
     }
+
+    if (showPurchasePicker) {
+        val initial = DateTimeUtil.parseFlexibleLocalDate(uiState.purchaseDate) ?: today
+        MealDatePickerDialog(
+            initialDate = initial,
+            minDate = minPurchase,
+            maxDate = today,
+            onDismiss = { showPurchasePicker = false },
+            onConfirm = { date ->
+                viewModel.updatePurchaseDate(DateTimeUtil.formatLocalDate(date))
+                showPurchasePicker = false
+            },
+        )
+    }
+    if (showExpiryPicker) {
+        val purchase = DateTimeUtil.parseFlexibleLocalDate(uiState.purchaseDate) ?: today
+        val initial = DateTimeUtil.parseFlexibleLocalDate(uiState.expiryDate) ?: purchase
+        MealDatePickerDialog(
+            initialDate = initial.coerceAtLeast(purchase),
+            minDate = purchase,
+            maxDate = purchase.plusYears(5),
+            onDismiss = { showExpiryPicker = false },
+            onConfirm = { date ->
+                viewModel.updateExpiryDate(DateTimeUtil.formatLocalDate(date))
+                showExpiryPicker = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun InventoryDateField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    onPickClick: () -> Unit,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        placeholder = { Text("2026-08-14") },
+        supportingText = { Text(stringResource(R.string.inventory_date_hint)) },
+        trailingIcon = {
+            IconButton(onClick = onPickClick) {
+                Icon(
+                    Icons.Default.DateRange,
+                    contentDescription = stringResource(R.string.inventory_pick_date),
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+    )
 }

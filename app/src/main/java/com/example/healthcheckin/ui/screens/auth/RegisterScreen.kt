@@ -6,9 +6,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -24,11 +28,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.healthcheckin.R
+import com.example.healthcheckin.ui.theme.HealthCheckInDimens
 
 @Composable
 fun RegisterScreen(
@@ -73,12 +77,22 @@ fun RegisterScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(24.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(HealthCheckInDimens.Space6),
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(text = stringResource(R.string.auth_register_title))
+            Text(
+                text = stringResource(R.string.auth_register_title),
+                style = MaterialTheme.typography.headlineMedium,
+            )
+            Text(
+                text = stringResource(R.string.auth_register_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = HealthCheckInDimens.Space2),
+            )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(HealthCheckInDimens.Space6))
 
             OutlinedTextField(
                 value = uiState.email,
@@ -128,13 +142,18 @@ fun RegisterScreen(
 
             Button(
                 onClick = viewModel::register,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = HealthCheckInDimens.ButtonHeight),
                 enabled = uiState.canSubmit && !uiState.isLoading,
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(modifier = Modifier.height(16.dp))
                 } else {
-                    Text(stringResource(R.string.auth_register_button))
+                    Text(
+                        text = stringResource(R.string.auth_register_button),
+                        maxLines = 1,
+                    )
                 }
             }
 

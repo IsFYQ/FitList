@@ -36,19 +36,21 @@ class RecommendationRepositoryImpl @Inject constructor(
 
     override suspend fun loadRecommendation(userId: String, localDate: String): RecommendationResult {
         val budget = dailyBudgetDao.getByDate(userId, localDate)
-        val summary = mealEntryDao.getDailySummary(userId, localDate)
+        val summary = runCatching { mealEntryDao.getDailySummary(userId, localDate) }.getOrNull()
         val candidates = inventoryItemDao.getAvailable(userId)
-            .filter { entity ->
-                InventoryExpiryEvaluator.evaluate(entity.purchaseDate, entity.expiryDate).status !=
-                    InventoryExpiryStatus.EXPIRED
+            .mapNotNull { entity ->
+                runCatching {
+                    val expired = InventoryExpiryEvaluator.evaluate(entity.purchaseDate, entity.expiryDate).status ==
+                        InventoryExpiryStatus.EXPIRED
+                    if (expired) null else toCandidate(userId, entity)
+                }.getOrNull()
             }
-            .mapNotNull { entity -> toCandidate(userId, entity) }
         return NutritionRecommendationEngine.compute(
             budgetKcal = budget?.budgetKcal ?: 0,
-            consumedKcal = summary.consumedKcal,
-            consumedProtein = summary.consumedProtein,
-            consumedCarb = summary.consumedCarb,
-            consumedFat = summary.consumedFat,
+            consumedKcal = summary?.consumedKcal ?: 0.0,
+            consumedProtein = summary?.consumedProtein ?: 0.0,
+            consumedCarb = summary?.consumedCarb ?: 0.0,
+            consumedFat = summary?.consumedFat ?: 0.0,
             targetProtein = budget?.proteinG ?: 0.0,
             targetCarb = budget?.carbG ?: 0.0,
             targetFat = budget?.fatG ?: 0.0,

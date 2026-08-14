@@ -45,7 +45,9 @@ class InventoryRepositoryImpl @Inject constructor(
     private val syncQueueDao: SyncQueueDao,
     private val deviceId: String,
 ) : InventoryRepository {
-    override fun observeItems(userId: String): Flow<List<InventoryItem>> = itemDao.observeAll(userId).map { it.map { item -> item.toItem() } }
+    override fun observeItems(userId: String): Flow<List<InventoryItem>> = itemDao.observeAll(userId).map { entities ->
+        entities.mapNotNull { entity -> runCatching { entity.toItem() }.getOrNull() }
+    }
     override suspend fun getById(itemId: String): InventoryItem? = itemDao.getById(itemId)?.toItem()
 
     override suspend fun create(userId: String, request: SaveInventoryRequest): Result<InventoryItem> = runCatching {
@@ -97,7 +99,7 @@ class InventoryRepositoryImpl @Inject constructor(
     override suspend fun matchForFood(userId: String, foodId: String?, foodName: String, foodBasisUnit: BasisUnit, mealBasisAmount: Double): InventoryMatchResult {
         val binding = foodId?.let { bindingDao.findByFood(userId, it) }
         val bound = binding?.let { itemDao.getById(it.inventoryItemId)?.takeIf { item -> item.deletedAt == null } }
-        if (bound != null && InventoryUnitConverter.dimensionsCompatible(foodBasisUnit.name, bound.unit)) {
+        if (bound != null) {
             return match(InventoryMatchLevel.L1, bound)
         }
         val normalized = Validators.normalizeFoodName(foodName)
@@ -122,18 +124,20 @@ class InventoryRepositoryImpl @Inject constructor(
     }
     override suspend fun previewDeduct(itemId: String, mealBasisAmount: Double, foodBasisUnit: BasisUnit): InventoryDeductPreview? {
         val item = itemDao.getById(itemId) ?: return null
-        if (!InventoryUnitConverter.dimensionsCompatible(foodBasisUnit.name, item.unit)) return null
-        val amount = PrecisionUtil.roundStorage(InventoryUnitConverter.fromBasis(mealBasisAmount, item.unit, item.pieceGrams))
+        val amount = PrecisionUtil.roundStorage(
+            InventoryUnitConverter.fromBasis(mealBasisAmount, item.unit, item.pieceGrams) ?: return null,
+        )
         return InventoryDeductPreview(match(InventoryMatchLevel.L1, item), mealBasisAmount, InventoryUnit.valueOf(item.unit), amount, (item.remainingAmount - amount).coerceAtLeast(0.0), amount > item.remainingAmount)
     }
     override suspend fun applyDeduct(userId: String, itemId: String, mealEntryId: String, mealBasisAmount: Double, foodBasisUnit: BasisUnit, choice: InventoryDeductChoice): Result<Double> = runCatching {
         if (choice.resolution == InventoryDeductResolution.SKIP) return@runCatching 0.0
         repeat(3) {
             val item = itemDao.getById(itemId) ?: error("Inventory item not found")
-            require(item.userId == userId && InventoryUnitConverter.dimensionsCompatible(foodBasisUnit.name, item.unit))
+            require(item.userId == userId)
             val requested = choice.manualAmount ?: InventoryUnitConverter.fromBasis(mealBasisAmount, item.unit, item.pieceGrams)
-            val deduct = PrecisionUtil.roundStorage(if (choice.resolution == InventoryDeductResolution.DEDUCT_REMAINING) requested.coerceAtMost(item.remainingAmount) else requested)
-            require(deduct >= 0 && deduct <= item.remainingAmount)
+                ?: return@runCatching 0.0
+            val deduct = PrecisionUtil.roundStorage(requested.coerceAtMost(item.remainingAmount).coerceAtLeast(0.0))
+            if (deduct <= 0.0) return@runCatching 0.0
             val now = DateTimeUtil.nowEpochMillis(); val balance = PrecisionUtil.roundStorage(item.remainingAmount - deduct)
             if (itemDao.updateRemainingWithVersion(item.id, balance, item.version, item.version + 1, now, SyncState.PENDING) == 1) {
                 database.withTransaction { ledger(item.copy(remainingAmount = balance), InventoryChangeType.MEAL_DEDUCT, -deduct, mealEntryId, now); enqueue("inventory_items", item.id, now) }
@@ -231,8 +235,12 @@ class InventoryRepositoryImpl @Inject constructor(
         val expiry = InventoryExpiryEvaluator.evaluate(purchaseDate, expiryDate)
         val deductable = remainingAmount > 0 && (unit != InventoryUnit.PIECE.name || (pieceGrams != null && pieceGrams > 0))
         return InventoryItem(
-            id, name, com.example.healthcheckin.util.InventoryCategory.valueOf(category),
-            remainingAmount, initialAmount, InventoryUnit.valueOf(unit), pieceGrams,
+            id, name,
+            runCatching { com.example.healthcheckin.util.InventoryCategory.valueOf(category) }
+                .getOrDefault(com.example.healthcheckin.util.InventoryCategory.OTHER),
+            remainingAmount, initialAmount,
+            runCatching { InventoryUnit.valueOf(unit) }.getOrDefault(InventoryUnit.G),
+            pieceGrams,
             purchaseDate, expiryDate, unitPrice, ingredientKey, expiry.status, expiry.daysStored,
             expiry.daysLeft, expiry.label, deductable, null,
         )

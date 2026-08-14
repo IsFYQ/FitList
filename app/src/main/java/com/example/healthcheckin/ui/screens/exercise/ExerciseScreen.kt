@@ -111,9 +111,7 @@ fun ExerciseScreen(
 
     Scaffold(
         topBar = {
-            if (!embeddedInTabs) {
-                TopAppBar(title = { Text(stringResource(R.string.exercise_title)) })
-            }
+            TopAppBar(title = { Text(stringResource(R.string.exercise_title), maxLines = 1) })
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
@@ -154,7 +152,12 @@ fun ExerciseScreen(
             }
             if (uiState.records.isEmpty()) {
                 item {
-                    AppEmptyState(title = stringResource(R.string.exercise_empty))
+                    AppEmptyState(
+                        title = stringResource(R.string.exercise_empty),
+                        message = stringResource(R.string.exercise_empty_hint),
+                        actionLabel = stringResource(R.string.exercise_record_fab),
+                        onAction = viewModel::openRecordSheet,
+                    )
                 }
             } else {
                 val grouped = uiState.records
@@ -339,12 +342,22 @@ private fun ExerciseRecordSheet(
                 singleLine = true,
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 listOf(15, 30, 45, 60).forEach { minutes ->
                     FilterChip(
                         selected = state.durationText == minutes.toString(),
                         onClick = { onQuickDuration(minutes) },
-                        label = { Text(stringResource(R.string.exercise_duration_quick, minutes)) },
+                        modifier = Modifier.weight(1f),
+                        label = {
+                            Text(
+                                text = stringResource(R.string.exercise_duration_quick_short, minutes),
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            )
+                        },
                     )
                 }
             }

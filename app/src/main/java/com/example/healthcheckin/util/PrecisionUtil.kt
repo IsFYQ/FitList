@@ -17,10 +17,8 @@ object UnitConverter {
     fun basisAmount(quantity: Double, unit: MealUnit, servingGrams: Double?): Double = when (unit) {
         MealUnit.G, MealUnit.ML -> quantity
         MealUnit.SERVING -> {
-            require(servingGrams != null && servingGrams > 0) {
-                "serving_grams required for SERVING unit"
-            }
-            quantity * servingGrams
+            val grams = servingGrams ?: return 0.0
+            if (grams <= 0.0) 0.0 else quantity * grams
         }
     }
 
@@ -42,12 +40,9 @@ object UnitConverter {
         "ML" -> quantity
         "L" -> lToMl(quantity)
         "PIECE" -> {
-            require(pieceGrams != null && pieceGrams > 0) {
-                "piece_grams required for PIECE unit"
-            }
-            quantity * pieceGrams
+            if (pieceGrams == null || pieceGrams <= 0) 0.0 else quantity * pieceGrams
         }
-        else -> throw IllegalArgumentException("Unknown inventory unit: $unit")
+        else -> 0.0
     }
 }
 
@@ -55,17 +50,25 @@ object PrecisionUtil {
 
     private val HALF_UP = RoundingMode.HALF_UP
 
-    fun roundStorage(value: Double): Double =
-        BigDecimal.valueOf(value).setScale(2, HALF_UP).toDouble()
+    fun roundStorage(value: Double): Double {
+        if (!value.isFinite()) return 0.0
+        return BigDecimal.valueOf(value).setScale(2, HALF_UP).toDouble()
+    }
 
-    fun roundCaloriesDisplay(value: Double): Int =
-        BigDecimal.valueOf(value).setScale(0, HALF_UP).toInt()
+    fun roundCaloriesDisplay(value: Double): Int {
+        if (!value.isFinite()) return 0
+        return BigDecimal.valueOf(value).setScale(0, HALF_UP).toInt()
+    }
 
-    fun roundMacroDisplay(value: Double): Double =
-        BigDecimal.valueOf(value).setScale(1, HALF_UP).toDouble()
+    fun roundMacroDisplay(value: Double): Double {
+        if (!value.isFinite()) return 0.0
+        return BigDecimal.valueOf(value).setScale(1, HALF_UP).toDouble()
+    }
 
-    fun roundWeightDisplay(value: Double): Double =
-        BigDecimal.valueOf(value).setScale(1, HALF_UP).toDouble()
+    fun roundWeightDisplay(value: Double): Double {
+        if (!value.isFinite()) return 0.0
+        return BigDecimal.valueOf(value).setScale(1, HALF_UP).toDouble()
+    }
 
     fun roundInt(value: Double): Int =
         BigDecimal.valueOf(value).setScale(0, HALF_UP).toInt()

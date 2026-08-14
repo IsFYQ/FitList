@@ -1,11 +1,9 @@
 package com.example.healthcheckin.ui.screens.dashboard
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -17,7 +15,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -26,6 +23,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,11 +43,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.healthcheckin.R
 import com.example.healthcheckin.domain.model.showBackfillAction
 import com.example.healthcheckin.ui.screens.dashboard.components.CalorieCard
+import com.example.healthcheckin.ui.screens.dashboard.components.DashboardLinkCard
 import com.example.healthcheckin.ui.screens.dashboard.components.DashboardSkeleton
 import com.example.healthcheckin.ui.screens.dashboard.components.DeviceTimeWarningBanner
 import com.example.healthcheckin.ui.screens.dashboard.components.HealthWarningBanner
 import com.example.healthcheckin.ui.screens.dashboard.components.MacroProgressSection
 import com.example.healthcheckin.ui.screens.dashboard.components.MealListSection
+import com.example.healthcheckin.ui.screens.dashboard.components.RecommendMealCard
 import com.example.healthcheckin.ui.screens.dashboard.components.WeightCard
 import com.example.healthcheckin.ui.theme.HealthCheckInDimens
 import com.example.healthcheckin.util.DateTimeUtil
@@ -107,22 +107,22 @@ fun DashboardScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = DateTimeUtil.formatDashboardDate(uiState.selectedDate),
-                            style = MaterialTheme.typography.titleLarge,
-                        )
-                        if (!uiState.isToday) {
-                            TextButton(
-                                onClick = viewModel::goToToday,
-                                modifier = Modifier.height(HealthCheckInDimens.MinTouchTarget),
-                            ) {
-                                Text(stringResource(R.string.dashboard_back_to_today))
-                            }
-                        }
-                    }
+                    Text(
+                        text = DateTimeUtil.formatDashboardDate(uiState.selectedDate),
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 },
                 actions = {
+                    if (!uiState.isToday) {
+                        TextButton(onClick = viewModel::goToToday) {
+                            Text(
+                                text = stringResource(R.string.dashboard_back_to_today),
+                                maxLines = 1,
+                            )
+                        }
+                    }
                     IconButton(
                         onClick = onNavigateSettings,
                         modifier = Modifier.size(HealthCheckInDimens.MinTouchTarget),
@@ -230,31 +230,27 @@ fun DashboardScreen(
 
                             MacroProgressSection(
                                 macros = data?.macros.orEmpty(),
-                                modifier = Modifier.padding(bottom = HealthCheckInDimens.SectionGap),
+                                modifier = Modifier.padding(bottom = HealthCheckInDimens.Space4),
                             )
 
-                            Button(
+                            RecommendMealCard(
                                 onClick = onNavigateRecommendation,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = HealthCheckInDimens.SectionGap),
-                            ) {
-                                Text(stringResource(R.string.dashboard_recommend_meal))
-                            }
+                                modifier = Modifier.padding(bottom = HealthCheckInDimens.Space4),
+                            )
 
                             WeightCard(
                                 data = data?.weightCard ?: com.example.healthcheckin.domain.model.WeightCardData(
                                     null, null, false, null, false, false, null,
                                 ),
                                 onClick = onNavigateWeight,
-                                modifier = Modifier.padding(bottom = HealthCheckInDimens.Space2),
+                                modifier = Modifier.padding(bottom = HealthCheckInDimens.Space3),
                             )
 
-                            androidx.compose.material3.ListItem(
-                                headlineContent = { Text(stringResource(R.string.body_entry_from_dashboard)) },
-                                modifier = Modifier
-                                    .padding(bottom = HealthCheckInDimens.SectionGap)
-                                    .clickable(onClick = onNavigateBodyMeasurements),
+                            DashboardLinkCard(
+                                title = stringResource(R.string.body_entry_from_dashboard),
+                                subtitle = stringResource(R.string.dashboard_body_entry_hint),
+                                onClick = onNavigateBodyMeasurements,
+                                modifier = Modifier.padding(bottom = HealthCheckInDimens.SectionGap),
                             )
 
                             MealListSection(
@@ -262,6 +258,9 @@ fun DashboardScreen(
                                 highlightEntryId = uiState.highlightEntryId,
                                 onEntryClick = onNavigateMealEdit,
                                 onDeleteEntry = viewModel::deleteMeal,
+                                emptyMessage = stringResource(R.string.dashboard_empty_meals_hint),
+                                emptyActionLabel = stringResource(R.string.dashboard_add_meal),
+                                onEmptyAction = { onNavigateAddMeal(uiState.selectedDate) },
                             )
                         }
                     }

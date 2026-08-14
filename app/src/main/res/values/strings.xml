@@ -7,7 +7,9 @@
 
     <!-- Auth -->
     <string name="auth_login_title">登录</string>
+    <string name="auth_login_subtitle">记录饮食，看见每天的变化</string>
     <string name="auth_register_title">注册</string>
+    <string name="auth_register_subtitle">创建账号，数据保存在本机</string>
     <string name="auth_email_hint">邮箱</string>
     <string name="auth_password_hint">密码</string>
     <string name="auth_confirm_password_hint">确认密码</string>
@@ -56,6 +58,7 @@
     <string name="dashboard_budget_inferred">预算为推算值</string>
     <string name="dashboard_warn_near_limit">快到今日上限了</string>
     <string name="dashboard_empty_meals">记录你的第一餐吧</string>
+    <string name="dashboard_empty_meals_hint">点右下角 + 号，搜索食物并记下这一餐</string>
     <string name="dashboard_add_meal">添加饮食</string>
     <string name="dashboard_time_inaccurate">设备时间可能不准确，可能影响记录日期</string>
     <string name="dashboard_no_goal_hint">先设置目标，才能计算每日预算</string>
@@ -84,6 +87,7 @@
     <!-- Onboarding -->
     <string name="onboarding_title">设定你的目标</string>
     <string name="onboarding_edit_title">修改我的目标</string>
+    <string name="onboarding_step_indicator">第 %1$d / %2$d 步</string>
     <string name="onboarding_back_blocked">完成设置后即可开始使用</string>
     <string name="onboarding_next">下一步</string>
     <string name="onboarding_previous">上一步</string>
@@ -365,6 +369,8 @@
     <string name="tab_inventory">库存</string>
     <string name="tab_exercise">运动</string>
     <string name="dashboard_recommend_meal">今天吃什么？</string>
+    <string name="dashboard_recommend_meal_hint">根据库存搭配一餐</string>
+    <string name="dashboard_body_entry_hint">腰围、胸围等围度记录</string>
     <string name="inventory_scan_receipt">扫描小票</string>
     <string name="tab_weight">体重</string>
     <string name="body_title">身体维度</string>
@@ -406,7 +412,8 @@
     <string name="milestone_empty">还没有里程碑。设定一个目标体重，坚持就会有成就感。</string>
     <string name="milestone_save_failed">保存失败，请重试</string>
     <string name="inventory_title">库存</string>
-    <string name="inventory_empty">还没有库存记录。买菜回来记一笔，就知道家里还有什么了。</string>
+    <string name="inventory_empty">还没有库存</string>
+    <string name="inventory_empty_hint">买菜回来记一笔，或扫描小票导入</string>
     <string name="inventory_search_hint">搜索食材</string>
     <string name="inventory_sort_category">默认（分类）</string>
     <string name="inventory_sort_expiry">即将过期</string>
@@ -433,6 +440,16 @@
     <string name="inventory_delete_linked_message">该食材已被 %1$d 条饮食记录扣减，删除后历史记录不受影响</string>
     <string name="inventory_amount_error">数量需大于 0</string>
     <string name="inventory_expiry_before_purchase">保质期不能早于购买日期</string>
+    <string name="inventory_date_invalid">请输入有效日期，例如 2026-08-14</string>
+    <string name="inventory_date_hint">可手动输入，或点右侧日历选择</string>
+    <string name="inventory_pick_date">选择日期</string>
+    <string name="inventory_clear_expiry">清除保质期</string>
+    <string name="meal_one_serving_weight">1份 = %1$s g</string>
+    <string name="meal_serving_grams_hint">约 %1$s g</string>
+    <string name="meal_serving_with_grams">%1$s份 · %2$s g</string>
+    <string name="body_record_title">记录%1$s</string>
+    <string name="body_change_date">更改日期</string>
+    <string name="exercise_duration_quick_short">%1$d分</string>
     <string name="inventory_save_failed">保存失败，请重试</string>
     <string name="binding_title">食材绑定关系</string>
     <string name="binding_count">食材绑定关系（%1$d）</string>
@@ -514,7 +531,8 @@
     <string name="exercise_week_sessions">本周次数：%1$d 次</string>
     <string name="exercise_current_streak">连续运动：%1$d 天</string>
     <string name="exercise_best_streak">历史最佳：%1$d 天</string>
-    <string name="exercise_empty">还没有运动记录，动一动吧</string>
+    <string name="exercise_empty">还没有运动记录</string>
+    <string name="exercise_empty_hint">点右下角 + 号，记下一次运动</string>
     <string name="exercise_record_fab">记录运动</string>
     <string name="exercise_record_title">记录运动</string>
     <string name="exercise_type_label">运动类型</string>

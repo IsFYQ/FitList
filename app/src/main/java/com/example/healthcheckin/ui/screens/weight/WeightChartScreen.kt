@@ -389,6 +389,8 @@ private fun WeightRangeSelector(
                         WeightChartRange.DAYS_30 -> stringResource(R.string.weight_range_30d)
                         WeightChartRange.DAYS_90 -> stringResource(R.string.weight_range_90d)
                     },
+                    maxLines = 1,
+                    style = MaterialTheme.typography.labelLarge,
                 )
             }
         }

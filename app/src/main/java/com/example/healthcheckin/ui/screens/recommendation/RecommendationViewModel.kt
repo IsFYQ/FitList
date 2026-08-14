@@ -62,7 +62,11 @@ class RecommendationViewModel @Inject constructor(
 
     fun loadRecommendation() {
         viewModelScope.launch {
-            val userId = sessionManager.getUserId() ?: return@launch
+            val userId = sessionManager.getUserId()
+            if (userId == null) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = "recommend_error_load") }
+                return@launch
+            }
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             val started = System.currentTimeMillis()
             val result = runCatching {
